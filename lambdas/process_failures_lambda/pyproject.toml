@@ -1,0 +1,48 @@
+[project]
+name = "mbtp_splunk_cloudwatch_process_failures"
+version = "0.0.1"
+description = "Default template for PDM package"
+authors = [
+    {name = "Thomas Nicholson", email = "thomas.nicholson@accenture.com"},
+]
+dependencies = [
+    "boto3>=1.35.63",
+]
+requires-python = "==3.12.*"
+readme = "README.md"
+license = {text = "n/a"}
+
+
+[tool.pdm]
+distribution = false
+
+[tool.pdm.scripts]
+test = "pdm run pytest -rP --junitxml=reports/pytest.xml --cov=src --cov-report=xml:reports/coverage.xml --cov-report term-missing tests/"
+lint = "pdm run pylint src/mbtp_splunk_cloudwatch_process_failures/"
+format = "pdm run black --check src/mbtp_splunk_cloudwatch_process_failures/"
+check = {composite = ["format", "lint", "test"]}
+
+[tool.pdm.dev-dependencies]
+dev = [
+    "black>=24.10.0",
+    "pytest>=8.3.3",
+    "pylint>=3.3.1",
+    "pytest-cov>=6.0.0",
+    "pytest-env>=1.1.5",
+    "pytest-mock>=3.14.0",
+]
+
+[tool.pylint.'MESSAGES CONTROL']
+disable="logging-fstring-interpolation"
+
+[tool.pytest.ini_options]
+env = [
+    "AWS_ACCESS_KEY_ID=testing",
+    "AWS_SECRET_ACCESS_KEY=testing",
+    "AWS_SECURITY_TOKEN=testing",
+    "AWS_SESSION_TOKEN=testing",
+    "AWS_REGION=eu-west-1",
+    "DLQ_QUEUE_ARN=DLQ_QUEUE_ARN",
+    "SQS_QUEUE_ARN=SQS_QUEUE_ARN",
+    "S3_BUCKET_NAME=S3_BUCKET_NAME",
+]
