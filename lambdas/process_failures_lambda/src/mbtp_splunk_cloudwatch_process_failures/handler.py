@@ -8,11 +8,24 @@ import boto3
 logger = logging.getLogger()
 logger.setLevel("INFO")
 
-REQUIRED_ENV_VARS = {"AWS_REGION", "S3_BUCKET_NAME", "SQS_QUEUE_ARN", "DLQ_QUEUE_ARN"}
-if missing_variables := REQUIRED_ENV_VARS.difference(environ):
-    raise EnvironmentError(
-        f"The following environment variables need to be set: {missing_variables}"
-    )
+
+REQUIRED_ENV_VARS = {
+    "AWS_REGION",
+    "S3_BUCKET_NAME",
+    "SQS_QUEUE_ARN",
+    "DLQ_QUEUE_ARN",
+}
+
+
+def check_required_env_vars():
+    """Function to check all required environment variables exist"""
+    if missing_variables := REQUIRED_ENV_VARS.difference(environ):
+        raise EnvironmentError(
+            f"The following environment variables need to be set: {missing_variables}"
+        )
+
+
+check_required_env_vars()
 
 REGION = environ["AWS_REGION"]
 
