@@ -18,9 +18,9 @@ distribution = false
 
 [tool.pdm.scripts]
 test = "pdm run pytest -rP --junitxml=reports/pytest.xml --cov=src --cov-report=xml:reports/coverage.xml --cov-report term-missing tests/"
-audit = "pdm run safety scan --full-report"
 lint = "pdm run pylint src/mbtp_splunk_cloudwatch_process_failures/"
 format = "pdm run black --check src/mbtp_splunk_cloudwatch_process_failures/"
+check = {composite = ["format", "lint", "test"]}
 
 [tool.pdm.dev-dependencies]
 dev = [
