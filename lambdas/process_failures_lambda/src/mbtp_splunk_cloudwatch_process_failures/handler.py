@@ -6,7 +6,7 @@ from os import environ
 import boto3
 
 logger = logging.getLogger()
-logger.setLevel("INFO")
+logger.setLevel(environ.get("LOG_LEVEL", "INFO"))
 
 
 REQUIRED_ENV_VARS = {
@@ -14,6 +14,8 @@ REQUIRED_ENV_VARS = {
     "S3_BUCKET_NAME",
     "SQS_QUEUE_ARN",
     "DLQ_QUEUE_ARN",
+    "RETRIES_PREFIX",
+    "FAILED_PREFIX",
 }
 
 
@@ -28,6 +30,8 @@ def check_required_env_vars():
 check_required_env_vars()
 
 REGION = environ["AWS_REGION"]
+RETRIES_PREFIX = environ["RETRIES_PREFIX"]
+FAILED_PREFIX = environ["FAILED_PREFIX"]
 
 s3_client = boto3.client("s3", region_name=REGION)
 sqs_client = boto3.client("sqs", region_name=REGION)
@@ -45,7 +49,9 @@ def redrive_dlq_sqs(source_arn: str, dest_arn: str):
 
 
 def reprocess_failed_files(
-    bucket_name: str, failed_prefix: str = "failed/", retry_prefix: str = "retries/"
+    bucket_name: str,
+    failed_prefix: str = FAILED_PREFIX,
+    retry_prefix: str = RETRIES_PREFIX,
 ):
     """Moves files from the failed prefix to the retries prefix.
 
@@ -70,7 +76,7 @@ def reprocess_failed_files(
             s3_client.delete_object(Bucket=bucket_name, Key=key)
 
 
-def handler():
+def lambda_handler(_event, _context):
     """Lambda function to re-processed any files that
     failed to be sent to Splunk after the retries."""
     redrive_dlq_sqs(environ["SQS_QUEUE_ARN"], environ["DLQ_QUEUE_ARN"])
