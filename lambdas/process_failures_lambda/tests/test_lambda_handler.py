@@ -7,7 +7,7 @@ from botocore.stub import Stubber
 import pytest
 from src.mbtp_splunk_cloudwatch_process_failures.handler import (
     check_required_env_vars,
-    handler,
+    lambda_handler,
 )
 
 BUCKET = environ["S3_BUCKET_NAME"]
@@ -89,7 +89,7 @@ def test_handler(mocker):
     )
 
     # Call the main handler function
-    handler()
+    lambda_handler({}, {})
 
 
 def test_missing_env_vars():
