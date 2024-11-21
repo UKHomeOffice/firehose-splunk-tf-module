@@ -13,14 +13,14 @@ resource "aws_lambda_function" "firehose_lambda_transform" {
   function_name    = "${var.environment_prefix_variable}-splunk-fh-transform"
   description      = "Transform data from CloudWatch format to Splunk compatible format"
   filename         = data.archive_file.lambda_function.output_path
-  role             = "arn:aws:iam::${var.account_ids[var.account]}:role/${var.kinesis_firehose_lambda_role_name}"
+  role             = aws_iam_role.kinesis_firehose_lambda.arn
   handler          = "kinesis-firehose-cloudwatch-logs-processor.handler"
   source_code_hash = data.archive_file.lambda_function.output_base64sha256
   runtime          = var.python_runtime
-  timeout          = var.lambda_function_timeout
-  memory_size      = var.lambda_transform_memory_size
+  timeout          = var.transform_lambda_function_timeout
+  memory_size      = var.transform_lambda_transform_memory_size
   layers           = ["arn:aws:lambda:${var.region}:580247275435:layer:LambdaInsightsExtension:53"]
-  reserved_concurrent_executions = var.lambda_concurrency_limit 
+  reserved_concurrent_executions = var.transform_lambda_concurrency_limit 
 
   dead_letter_config {
     target_arn = aws_sqs_queue.transform_lambda_dlq.arn
@@ -54,14 +54,14 @@ resource "aws_lambda_function" "firehose_lambda_retry" {
   provider         = aws.lambda_processing
   function_name    = "${var.environment_prefix_variable}-splunk-fh-retry"
   description      = "Reingest logs from the retries prefix of the s3 bucket back into firehose"
-  role             = "arn:aws:iam::${var.account_ids[var.account]}:role/${var.kinesis_firehose_lambda_role_name}"
+  role             = aws_iam_role.kinesis_firehose_lambda.arn
   handler          = ""
   source_code_hash = data.archive_file.retry_lambda_function.output_base64sha256
   runtime = var.python_runtime
-  timeout = var.lambda_function_timeout
-  memory_size = var.lambda_transform_memory_size
+  timeout = var.retry_lambda_function_timeout
+  memory_size = var.retry_lambda_transform_memory_size
   layers = ["arn:aws:lambda:${var.region}:580247275435:layer:LambdaInsightsExtension:53"]
-  reserved_concurrent_executions = var.lambda_concurrency_limit 
+  reserved_concurrent_executions = var.retry_lambda_concurrency_limit 
 
   dead_letter_config {
     target_arn = aws_sqs_queue.retry_lambda_dql.arn
@@ -99,14 +99,14 @@ resource "aws_lambda_function" "firehose_lambda_retry" {
   provider         = aws.lambda_processing
   function_name    = "${var.environment_prefix_variable}-splunk-fh-reprocess-failed"
   description      = "Manually triggered to move objects from /failed to /retries"
-  role             = "arn:aws:iam::${var.account_ids[var.account]}:role/${var.kinesis_firehose_lambda_role_name}"
+  role             = aws_iam_role.kinesis_firehose_lambda.arn
   handler          = ""
   source_code_hash = data.archive_file.retry_lambda_function.output_base64sha256
   runtime = var.python_runtime
-  timeout = var.lambda_function_timeout
-  memory_size = var.lambda_transform_memory_size
+  timeout = var.failed_lambda_function_timeout
+  memory_size = var.failed_lambda_transform_memory_size
   layers = ["arn:aws:lambda:${var.region}:580247275435:layer:LambdaInsightsExtension:53"]
-  reserved_concurrent_executions = var.lambda_concurrency_limit 
+  reserved_concurrent_executions = var.failed_lambda_concurrency_limit 
 
   tracing_config {
     mode = "Active"

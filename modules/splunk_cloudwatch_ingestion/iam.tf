@@ -91,7 +91,8 @@ data "aws_iam_policy_document" "lambda_policy_doc" {
       "sqs:SendMessage"
     ]
     resources = [
-      aws_sqs_queue.lambda_dlq.arn
+      aws_sqs_queue.transform_lambda_dlq.arn,
+      aws_sqs_queue.retry_lambda_dql.arn
     ]
     effect = "Allow"
   }
