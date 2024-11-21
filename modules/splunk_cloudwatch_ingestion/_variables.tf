@@ -110,12 +110,32 @@ variable "kinesis_firehose_role_name" {
   default     = "SplunkKinesisFHRole"
 }
 
-variable "lambda_function_timeout" {
+variable "transform_lambda_function_timeout" {
   description = "The function execution time at which Lambda should terminate the function."
   default     = 900
 }
 
-variable "lambda_transform_memory_size" {
+variable "transform_lambda_transform_memory_size" {
+  description = "The function execution memory limit at which Lambda should terminate the function."
+  default     = 1536
+}
+
+variable "retry_lambda_function_timeout" {
+  description = "The function execution time at which Lambda should terminate the function."
+  default     = 900
+}
+
+variable "retry_lambda_transform_memory_size" {
+  description = "The function execution memory limit at which Lambda should terminate the function."
+  default     = 1536
+}
+
+variable "failed_lambda_function_timeout" {
+  description = "The function execution time at which Lambda should terminate the function."
+  default     = 900
+}
+
+variable "failed_lambda_transform_memory_size" {
   description = "The function execution memory limit at which Lambda should terminate the function."
   default     = 1536
 }
@@ -160,7 +180,22 @@ variable "firehose_failures_bucket_arn" {
   default     = ""
 }
 
-variable "lambda_concurrency_limit" {
+variable "firehose_failures_bucket_id" {
+  description = "The id of the bucket in which logs are stored when they fail being sent to splunk."
+  default     = ""
+}
+
+variable "transform_lambda_concurrency_limit" {
+  description = "The number of concurrent lambdas that can run"
+  default = 100
+}
+
+variable "retry_lambda_concurrency_limit" {
+  description = "The number of concurrent lambdas that can run"
+  default = 100
+}
+
+variable "failed_lambda_concurrency_limit" {
   description = "The number of concurrent lambdas that can run"
   default = 100
 }

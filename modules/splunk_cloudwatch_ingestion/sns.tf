@@ -18,7 +18,7 @@ resource "aws_sns_topic_subscription" "subscription_to_failed_splunk_sns_topic" 
 
 # S3 bucket notification to trigger SNS topic
 resource "aws_s3_bucket_notification" "s3_to_failed_events_sns_topic" {
-    bucket = "[TO BE DETERMINED]"
+    bucket = var.firehose_failures_bucket_id
 
     topic {
       topic_arn = aws_sns_topic.sns_topic_failed_splunk_events.arn
@@ -41,7 +41,7 @@ resource "aws_sns_topic_policy" "s3_to_sns_policy" {
         Resource  = aws_sns_topic.sns_topic_failed_splunk_events.arn,
         Condition = {
           ArnLike = {
-            "aws:SourceArn": "arn:aws:s3:::[s3-BUCKET ARN TO BE CONFIRMED]"
+            "aws:SourceArn": var.firehose_failures_bucket_arn
           }
         }
       }
