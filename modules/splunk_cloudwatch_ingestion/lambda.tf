@@ -63,10 +63,6 @@ resource "aws_lambda_function" "firehose_lambda_retry" {
   layers = ["arn:aws:lambda:${var.region}:580247275435:layer:LambdaInsightsExtension:53"]
   reserved_concurrent_executions = var.retry_lambda_concurrency_limit 
 
-  dead_letter_config {
-    target_arn = aws_sqs_queue.retry_lambda_dql.arn
-  }
-
   tracing_config {
     mode = "Active"
   }
