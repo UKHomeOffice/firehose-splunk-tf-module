@@ -105,11 +105,11 @@ s3_client = boto3.client("s3", region_name=REGION)
 firehose_client = boto3.client("firehose", region_name=REGION)
 
 
-def get_validate_config():
-    s3_config_file = s3_client.get_object(
+def get_validate_config() -> dict:
+    s3_config_file: dict = s3_client.get_object(
         Bucket=environ["config_S3_BUCKET"], Key=environ["config_S3_KEY"]
     )
-    config_yaml = yaml.safe_load(s3_config_file["Body"].read().decode())
+    config_yaml: dict = yaml.safe_load(s3_config_file["Body"].read().decode())
 
     log_group_schema = {
         "accounts": {
@@ -151,26 +151,24 @@ def get_validate_config():
     return config_yaml
 
 
-config = get_validate_config()
+def compile_regexes(config_obj: dict):
+    # Not sure there is much performance improvements from compiling regexes prior to using them, but may as well.
+    COMPILED_REGEXES = {}
+    for details in config_obj["sourcetypes"].values():
+        for regex_type in ["allowlist_regexes", "denylist_regexes", "redact_regexes"]:
+            if regex_type in details:
+                regex_key = f"{regex_type}_compiled"
+                details[regex_key] = []
+                for regex in details[regex_type]:
+                    compiled_regex = COMPILED_REGEXES.get(regex)
+                    if not compiled_regex:
+                        compiled_regex = re.compile(regex)
+                        COMPILED_REGEXES[regex] = compiled_regex
 
-# Not sure there is much performance improvements from compiling regexes prior to using them, but may as well.
-COMPILED_REGEXES = {}
-for details in config["sourcetypes"].values():
-    for regex_type in ["allowlist_regexes", "denylist_regexes", "redact_regexes"]:
-        if regex_type in details:
-            regex_key = f"{regex_type}_compiled"
-            details[regex_key] = []
-            for regex in details[regex_type]:
-                compiled_regex = COMPILED_REGEXES.get(regex)
-                if not compiled_regex:
-                    compiled_regex = re.compile(regex)
-                    COMPILED_REGEXES[regex] = compiled_regex
-
-                details[regex_key].append(compiled_regex)
-del COMPILED_REGEXES
+                    details[regex_key].append(compiled_regex)
 
 
-def is_json(j):
+def is_json(j: str) -> bool:
     try:
         json.loads(j)
     except ValueError:
@@ -178,20 +176,24 @@ def is_json(j):
     return True
 
 
-def load_json_gzip_base64(base64_data):
+def load_json_gzip_base64(base64_data: str) -> dict:
     return json.loads(gzip.decompress(base64.b64decode(base64_data)))
 
 
+config = get_validate_config()
+compile_regexes(config)
+
+
 def transform_cloudwatch_log_event(
-    event,
-    index,
-    sourcetype,
-    sourcetype_name,
-    firehose_arn,
-    account_id,
-    log_group,
-    log_stream,
-):
+    event: dict,
+    index: str,
+    sourcetype: dict,
+    sourcetype_name: str,
+    firehose_arn: str,
+    account_id: str,
+    log_group: str,
+    log_stream: str,
+) -> None | str:
     log = event["message"]
 
     for deny_regex in sourcetype.get("denylist_regexes_compiled", []):
@@ -237,11 +239,11 @@ def transform_cloudwatch_log_event(
     return json.dumps(new_log)
 
 
-def process_cloudwatch_log_record(data, rec_id, firehose_arn):
+def process_cloudwatch_log_record(data: dict, rec_id: str, firehose_arn: str):
     # CONTROL_MESSAGE are sent by CWL to check if the subscription is reachable.
     # They do not contain actual data.
     if data["messageType"] == "CONTROL_MESSAGE":
-        yield {"result": "Dropped", "recordId": rec_id}
+        return {"result": "Dropped", "recordId": rec_id}
     elif data["messageType"] == "DATA_MESSAGE":
         account_id = data["owner"]
         log_group = data["logGroup"]
@@ -251,7 +253,7 @@ def process_cloudwatch_log_record(data, rec_id, firehose_arn):
             "log_groups"
         ].get(log_group, {}).get("accounts", []):
             logging.info("TODO DROPPING")
-            yield {"result": "Dropped", "recordId": rec_id}
+            return {"result": "Dropped", "recordId": rec_id}
 
         index = config["log_groups"][log_group]["index"]
         sourcetype_name = config["log_groups"][log_group]["sourcetype"]
@@ -274,29 +276,35 @@ def process_cloudwatch_log_record(data, rec_id, firehose_arn):
             )
         ]
 
-        yield {
+        return {
             "data": base64.b64encode("\n".join(log_events).encode()).decode(),
             "result": "Ok",
             "recordId": rec_id,
         }
     else:
-        yield {"result": "ProcessingFailed", "recordId": rec_id}
+        return {"result": "ProcessingFailed", "recordId": rec_id}
 
 
-def process_records(records, firehose_arn):
+def process_records(records: list[dict], firehose_arn: str) -> list:
+    returned_records = []
     for r in records:
         data = load_json_gzip_base64(r["data"])
         rec_id = r["recordId"]
 
         if set(("messageType", "logGroup", "owner", "logEvents")) <= data.keys():
             # If it's a Cloudwatch log record
-            yield process_cloudwatch_log_record(data, rec_id, firehose_arn)
+            returned_records.append(
+                process_cloudwatch_log_record(data, rec_id, firehose_arn)
+            )
         elif set(("index", "sourcetype", "event")) <= data.keys():
             # Else if it's a reingested log which can skip processing
-            yield {"data": r["data"], "result": "Ok", "recordId": rec_id}
+            returned_records.append(
+                {"data": r["data"], "result": "Ok", "recordId": rec_id}
+            )
         else:
             # Else it's an unknown log, so reject it
-            yield {"result": "ProcessingFailed", "recordId": rec_id}
+            returned_records.append({"result": "ProcessingFailed", "recordId": rec_id})
+    return returned_records
 
 
 def split_cwl_record(cwl_record):
@@ -316,7 +324,7 @@ def split_cwl_record(cwl_record):
     return [gzip.compress(json.dumps(r).encode()) for r in [rec1, rec2]]
 
 
-def putRecordsToFirehoseStream(
+def put_records_to_firehose_stream(
     stream_name: str,
     records: list[dict],
     attempts_made: int = 0,
@@ -354,7 +362,7 @@ def putRecordsToFirehoseStream(
                 "Some records failed while calling Putrecord_batch to Firehose stream, retrying. %s"
                 % (err_msg)
             )
-            putRecordsToFirehoseStream(
+            put_records_to_firehose_stream(
                 stream_name, failed_records, attempts_made + 1, max_attempts
             )
         else:
@@ -375,7 +383,7 @@ def lambda_handler(event, _context):
     firehose_arn = event["deliveryStreamArn"]
     stream_name = firehose_arn.split("/")[1]
 
-    records = list(process_records(event["records"], firehose_arn))
+    records = process_records(event["records"], firehose_arn)
     projected_size = 0
     record_lists_to_reingest = []
 
@@ -389,8 +397,12 @@ def lambda_handler(event, _context):
         # the log events, and re-ingest both of them (note that it is the original data that is re-ingested, not the
         # processed data). If it's not possible to split because there is only one log event, then mark the record as
         # ProcessingFailed, which sends it to error output.
-        if len(rec["data"]) > 6000000:
+
+        # If the record is greater than 6MB
+        if len(rec["data"]) > 6_000_000:
+            # Reload original data
             cwl_record = load_json_gzip_base64(original_record["data"])
+            # If there is more than one log event, split log events in half and re-process - seems overkill TODO
             if len(cwl_record["logEvents"]) > 1:
                 rec["result"] = "Dropped"
                 record_lists_to_reingest.append(
@@ -400,6 +412,7 @@ def lambda_handler(event, _context):
                     ]
                 )
             else:
+                # Else if it's just one large message, drop it
                 rec["result"] = "ProcessingFailed"
                 print(
                     (
@@ -410,6 +423,7 @@ def lambda_handler(event, _context):
                 )
             del rec["data"]
         else:
+            # If the record is less than 6MB,
             projected_size += len(rec["data"]) + len(rec["recordId"])
             # 6000000 instead of 6291456 to leave ample headroom for the stuff we didn't account for
             if projected_size > 6000000:
@@ -427,7 +441,7 @@ def lambda_handler(event, _context):
         for i in range(0, len(flattened_list), max_batch_size):
             record_batch = flattened_list[i : i + max_batch_size]
             # last argument is maxAttempts
-            putRecordsToFirehoseStream(stream_name, record_batch)
+            put_records_to_firehose_stream(stream_name, record_batch)
             records_reingested_so_far += len(record_batch)
             print("Reingested %d/%d" % (records_reingested_so_far, len(flattened_list)))
 
