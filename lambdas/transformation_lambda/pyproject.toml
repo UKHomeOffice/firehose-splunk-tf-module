@@ -36,7 +36,7 @@ dev = [
 ]
 
 [tool.pylint.'MESSAGES CONTROL']
-disable="logging-fstring-interpolation"
+disable=["logging-fstring-interpolation","logging-not-lazy"]
 
 [tool.pytest.ini_options]
 env = [
@@ -45,4 +45,6 @@ env = [
     "AWS_SECURITY_TOKEN=testing",
     "AWS_SESSION_TOKEN=testing",
     "AWS_REGION=eu-west-1",
+    "CONFIG_S3_BUCKET=CONFIG_S3_BUCKET",
+    "CONFIG_S3_KEY=CONFIG_S3_KEY",
 ]
