@@ -86,7 +86,7 @@ logger = logging.getLogger()
 logger.setLevel(environ.get("LOG_LEVEL", "INFO"))
 
 
-REQUIRED_ENV_VARS = {"AWS_REGION", "config_S3_BUCKET", "config_S3_KEY"}
+REQUIRED_ENV_VARS = {"AWS_REGION", "CONFIG_S3_BUCKET", "CONFIG_S3_KEY"}
 
 
 def check_required_env_vars():
@@ -101,13 +101,25 @@ check_required_env_vars()
 
 REGION = environ["AWS_REGION"]
 
-s3_client = boto3.client("s3", region_name=REGION)
 firehose_client = boto3.client("firehose", region_name=REGION)
+s3_client = boto3.client("s3", region_name=REGION)
 
 
-def get_validate_config() -> dict:
+class InvalidConfigException(Exception):
+    """Invalid Config Exception"""
+
+
+def get_validated_config() -> dict:
+    """Downloads a configuration file from S3 and checks it matches the required schema.
+
+    Raises:
+        InvalidConfigException: Raised if the config does not match what's required.
+
+    Returns:
+        dict: Processed configuration.
+    """
     s3_config_file: dict = s3_client.get_object(
-        Bucket=environ["config_S3_BUCKET"], Key=environ["config_S3_KEY"]
+        Bucket=environ["CONFIG_S3_BUCKET"], Key=environ["CONFIG_S3_KEY"]
     )
     config_yaml: dict = yaml.safe_load(s3_config_file["Body"].read().decode())
 
@@ -146,29 +158,27 @@ def get_validate_config() -> dict:
     }
     v = Validator(schema)
     if not v.validate(config_yaml):
-        raise Exception(f"Config failed to parse - {v.errors}")
+        raise InvalidConfigException(f"Config failed to parse - {v.errors}")
 
     return config_yaml
 
 
-def compile_regexes(config_obj: dict):
-    # Not sure there is much performance improvements from compiling regexes prior to using them, but may as well.
-    COMPILED_REGEXES = {}
-    for details in config_obj["sourcetypes"].values():
-        for regex_type in ["allowlist_regexes", "denylist_regexes", "redact_regexes"]:
-            if regex_type in details:
-                regex_key = f"{regex_type}_compiled"
-                details[regex_key] = []
-                for regex in details[regex_type]:
-                    compiled_regex = COMPILED_REGEXES.get(regex)
-                    if not compiled_regex:
-                        compiled_regex = re.compile(regex)
-                        COMPILED_REGEXES[regex] = compiled_regex
+CONFIG = {}
+if not environ.get("PYTEST_VERSION"):  # pragma: no cover
+    CONFIG = get_validated_config()
 
-                    details[regex_key].append(compiled_regex)
+DEFAULT_ALLOW_REGEX = ".*"
 
 
 def is_json(j: str) -> bool:
+    """Checks if a string is json parsable
+
+    Args:
+        j (str): JSON to test
+
+    Returns:
+        bool: True if string is json parsable
+    """
     try:
         json.loads(j)
     except ValueError:
@@ -177,11 +187,15 @@ def is_json(j: str) -> bool:
 
 
 def load_json_gzip_base64(base64_data: str) -> dict:
+    """Converts a b64, gzip compressed string into a dictionary
+
+    Args:
+        base64_data (str): Base64 encoded data
+
+    Returns:
+        dict: Decoded, decompressed, loaded dictionary
+    """
     return json.loads(gzip.decompress(base64.b64decode(base64_data)))
-
-
-config = get_validate_config()
-compile_regexes(config)
 
 
 def transform_cloudwatch_log_event(
@@ -194,34 +208,51 @@ def transform_cloudwatch_log_event(
     log_group: str,
     log_stream: str,
 ) -> None | str:
+    """Transforms a CW event into a Splunk one
+
+    Args:
+        event (dict): Initial event
+        index (str): Splunk Index
+        sourcetype (dict): Sourcetype object containing regexes
+        sourcetype_name (str): Splunk Sourcetype name
+        firehose_arn (str): Firehose ARN
+        account_id (str): AWS Account ID of the initial log
+        log_group (str): Log group name
+        log_stream (str): Log group stream
+
+    Returns:
+        None | str: The processed message or None if we dropped it
+    """
     log = event["message"]
 
-    for deny_regex in sourcetype.get("denylist_regexes_compiled", []):
-        if deny_regex.search(log):
+    for deny_regex in sourcetype.get("denylist_regexes", []):
+        if re.search(deny_regex, log):
+            logging.info(f"Dropping log due to matching {deny_regex}. Log = {log}")
             return None
 
     allowed = False
-    for allow_regex in sourcetype.get("allowlist_regexes_compiled", []):
-        if allow_regex.search(log):
+    for allow_regex in sourcetype.get("allowlist_regexes", [DEFAULT_ALLOW_REGEX]):
+        if re.search(allow_regex, log):
             allowed = True
             break
     if not allowed:
+        logging.info(
+            f"Dropping log because it did not match any allowlist regexes. Log = {log}"
+        )
         return None
 
-    for regex_index, redact_regex in enumerate(
-        sourcetype.get("redact_regexes_compiled", [])
-    ):
-        if match := redact_regex.search(log):
+    for regex_index, redact_regex in enumerate(sourcetype.get("redact_regexes", [])):
+        if match := re.search(redact_regex, log):
             for group_index, _ in enumerate(match.groups()):
                 group_span = match.span(group_index + 1)
                 log = (
                     log[: group_span[0]]
-                    + f'*** REDACTED BY {sourcetype_name}["redact_regexes"][{regex_index}]***'
+                    + f"***REDACTED BY {sourcetype_name}.redact_regexes.{regex_index}***"
                     + log[group_span[1] :]
                 )
 
     if is_json(log):
-        log = json.loads(event["message"])
+        log = json.loads(log)
 
     new_log = {
         "index": index,
@@ -239,12 +270,25 @@ def transform_cloudwatch_log_event(
     return json.dumps(new_log)
 
 
-def process_cloudwatch_log_record(data: dict, rec_id: str, firehose_arn: str):
+def process_cloudwatch_log_record(
+    data: dict, rec_id: str, firehose_arn: str, config: dict
+) -> dict:
+    """Matches a CW event to a Splunk index and source type
+
+    Args:
+        data (dict): CW Event
+        rec_id (str): Firehose Record ID
+        firehose_arn (str): Firehose ARN
+        config (dict): Configuration to match against
+
+    Returns:
+        dict: Processed records
+    """
     # CONTROL_MESSAGE are sent by CWL to check if the subscription is reachable.
     # They do not contain actual data.
     if data["messageType"] == "CONTROL_MESSAGE":
         return {"result": "Dropped", "recordId": rec_id}
-    elif data["messageType"] == "DATA_MESSAGE":
+    if data["messageType"] == "DATA_MESSAGE":
         account_id = data["owner"]
         log_group = data["logGroup"]
         log_stream = data["logStream"]
@@ -252,7 +296,9 @@ def process_cloudwatch_log_record(data: dict, rec_id: str, firehose_arn: str):
         if log_group not in config["log_groups"] or str(account_id) not in config[
             "log_groups"
         ].get(log_group, {}).get("accounts", []):
-            logging.info("TODO DROPPING")
+            logging.info(
+                f"Dropping as we cannot locate a log_group({log_group}) and account_id({account_id}) match for it."
+            )
             return {"result": "Dropped", "recordId": rec_id}
 
         index = config["log_groups"][log_group]["index"]
@@ -281,11 +327,32 @@ def process_cloudwatch_log_record(data: dict, rec_id: str, firehose_arn: str):
             "result": "Ok",
             "recordId": rec_id,
         }
-    else:
-        return {"result": "ProcessingFailed", "recordId": rec_id}
+    return {"result": "ProcessingFailed", "recordId": rec_id}
 
 
-def process_records(records: list[dict], firehose_arn: str) -> list:
+def get_record_size(record: dict) -> int:
+    """Dumps to a dict to a string and calculates the length of it in bytes.
+
+    Args:
+        record (dict): Dictionary to get the size of
+
+    Returns:
+        int: Size of the dictionary
+    """
+    return len(json.dumps(record).encode())
+
+
+def process_records(records: list[dict], firehose_arn: str, config: dict) -> list:
+    """Loops through records, works out their type and processes them accordingly.
+
+    Args:
+        records (list[dict]): Records to process
+        firehose_arn (str): Firehose ARN that received them
+        config (dict): Configuration used to process the CW events
+
+    Returns:
+        list: Processed records
+    """
     returned_records = []
     for r in records:
         data = load_json_gzip_base64(r["data"])
@@ -294,7 +361,7 @@ def process_records(records: list[dict], firehose_arn: str) -> list:
         if set(("messageType", "logGroup", "owner", "logEvents")) <= data.keys():
             # If it's a Cloudwatch log record
             returned_records.append(
-                process_cloudwatch_log_record(data, rec_id, firehose_arn)
+                process_cloudwatch_log_record(data, rec_id, firehose_arn, config)
             )
         elif set(("index", "sourcetype", "event")) <= data.keys():
             # Else if it's a reingested log which can skip processing
@@ -307,20 +374,26 @@ def process_records(records: list[dict], firehose_arn: str) -> list:
     return returned_records
 
 
-def split_cwl_record(cwl_record):
-    # TODO only CWL
+def split_cwl_record(cwl_record: dict) -> list:
     """
     Splits one CWL record into two, each containing half the log events.
     Serializes and compresses the data before returning. That data can then be
     re-ingested into the stream, and it'll appear as though they came from CWL
     directly.
+
+    Args:
+        cwl_record (dict): Cloudwatch Record
+
+    Returns:
+        list: Split up cloudwatch events, compressed ready for reingestion
     """
-    logEvents = cwl_record["logEvents"]
-    mid = len(logEvents) // 2
-    rec1 = {k: v for k, v in cwl_record.items()}
-    rec1["logEvents"] = logEvents[:mid]
-    rec2 = {k: v for k, v in cwl_record.items()}
-    rec2["logEvents"] = logEvents[mid:]
+
+    log_events = cwl_record["logEvents"]
+    mid = len(log_events) // 2
+    rec1 = dict(cwl_record.items())
+    rec1["logEvents"] = log_events[:mid]
+    rec2 = dict(cwl_record.items())
+    rec2["logEvents"] = log_events[mid:]
     return [gzip.compress(json.dumps(r).encode()) for r in [rec1, rec2]]
 
 
@@ -330,17 +403,26 @@ def put_records_to_firehose_stream(
     attempts_made: int = 0,
     max_attempts: int = 20,
 ):
+    """Tries to send records back to firehose.
+
+    Args:
+        stream_name (str): Stream to send the logs to.
+        records (list[dict]): Records to send.
+        attempts_made (int, optional): How many attempts we've already made. Defaults to 0.
+        max_attempts (int, optional): How many attempts to make. Defaults to 20.
+
+    Raises:
+        RuntimeError: If we fail to send them, raise this error
+    """
     failed_records = []
     codes = []
     err_msg = ""
-    # if put_record_batch throws for whatever reason, response['xx'] will error out, adding a check for a valid
-    # response will prevent this
     response = None
     try:
         response = firehose_client.put_record_batch(
             DeliveryStreamName=stream_name, Records=records
         )
-    except Exception as e:
+    except Exception as e:  # pylint: disable=broad-exception-caught
         failed_records = records
         err_msg = str(e)
 
@@ -358,39 +440,81 @@ def put_records_to_firehose_stream(
 
     if failed_records:
         if attempts_made + 1 < max_attempts:
-            print(
-                "Some records failed while calling Putrecord_batch to Firehose stream, retrying. %s"
-                % (err_msg)
+            logging.info(
+                f"Some records failed while calling Putrecord_batch to Firehose stream, retrying. {err_msg}"
             )
             put_records_to_firehose_stream(
                 stream_name, failed_records, attempts_made + 1, max_attempts
             )
         else:
             raise RuntimeError(
-                "Could not put records after %s attempts. %s"
-                % (str(max_attempts), err_msg)
+                f"Could not put records after {str(max_attempts)} attempts. {err_msg}"
             )
 
 
-def create_reingestion_record(original_record, data=None):
+def create_reingestion_record(original_record: dict, data: bytes | None = None) -> dict:
+    """Creates a reingestion record to send back to firehose
+
+    Args:
+        original_record (dict): Original Record
+        data (bytes | None, optional): Data to include in the record. Defaults to None.
+
+    Returns:
+        dict: Record to send back to firehose
+    """
     if data is None:
         data = base64.b64decode(original_record["data"])
     r = {"Data": data}
     return r
 
 
-def lambda_handler(event, _context):
-    firehose_arn = event["deliveryStreamArn"]
-    stream_name = firehose_arn.split("/")[1]
+def reingest_records(
+    record_lists_to_reingest: list[list[dict]],
+    stream_name: str,
+    max_batch_size: int = 500,
+):
+    """Reingests records back into firehose
 
-    records = process_records(event["records"], firehose_arn)
-    projected_size = 0
+    Args:
+        record_lists_to_reingest (list[list[dict]]): Records to reingest.
+        stream_name (str): Name of the firehose stream.
+        max_batch_size (int, optional): Maximum number of records to send to firehose at once. Defaults to 500.
+    """
+    # call putrecord_batch/putRecords for each group of up to 500 records to be re-ingested
+    if record_lists_to_reingest:
+        records_reingested_so_far = 0
+        flattened_list = [r for sublist in record_lists_to_reingest for r in sublist]
+        for i in range(0, len(flattened_list), max_batch_size):
+            record_batch = flattened_list[i : i + max_batch_size]
+            # last argument is maxAttempts
+            put_records_to_firehose_stream(stream_name, record_batch)
+            records_reingested_so_far += len(record_batch)
+            logging.info(
+                f"Reingested {records_reingested_so_far}/{len(flattened_list)}"
+            )
+
+
+def work_out_records_to_reingest(
+    event: dict, records: list[dict], max_return_size: int = 6_000_000
+) -> list[list[dict]]:
+    """Goes through all the processed records and works out what cannot be returned through the lambda return.
+
+    Args:
+        event (dict): Initial event object
+        records (list[dict]): Transformed records
+        max_return_size (int, optional): Maximum lambda return size. Defaults to 6_000_000.
+
+    Returns:
+        list[dict]: Records which cannot be returned and need resubmitting to Firehose.
+    """
     record_lists_to_reingest = []
+    projected_return_size = 0
 
     for idx, rec in enumerate(records):
         original_record = event["records"][idx]
 
         if rec["result"] != "Ok":
+            projected_return_size += record_size
             continue
 
         # If a single record is too large after processing, split the original CWL data into two, each containing half
@@ -399,11 +523,13 @@ def lambda_handler(event, _context):
         # ProcessingFailed, which sends it to error output.
 
         # If the record is greater than 6MB
-        if len(rec["data"]) > 6_000_000:
+        record_size = get_record_size(rec)
+        # We shouldn't get any processed reingested logs hitting this as they will be less than 6MB (reingestion already checked that)
+        if record_size > max_return_size:
             # Reload original data
             cwl_record = load_json_gzip_base64(original_record["data"])
-            # If there is more than one log event, split log events in half and re-process - seems overkill TODO
-            if len(cwl_record["logEvents"]) > 1:
+            # If there is more than one log event, split log events in half and re-process
+            if len(cwl_record.get("logEvents", [])) > 1:
                 rec["result"] = "Dropped"
                 record_lists_to_reingest.append(
                     [
@@ -414,38 +540,41 @@ def lambda_handler(event, _context):
             else:
                 # Else if it's just one large message, drop it
                 rec["result"] = "ProcessingFailed"
-                print(
-                    (
-                        "Record %s contains only one log event but is still too large after processing (%d bytes), "
-                        + "marking it as %s"
-                    )
-                    % (rec["recordId"], len(rec["data"]), rec["result"])
+                logging.info(
+                    f"Record {rec["recordId"]} contains only one log event but is still too large after processing ({record_size} bytes), marking it as {rec["result"]}"
                 )
             del rec["data"]
         else:
             # If the record is less than 6MB,
-            projected_size += len(rec["data"]) + len(rec["recordId"])
+            projected_return_size += record_size
             # 6000000 instead of 6291456 to leave ample headroom for the stuff we didn't account for
-            if projected_size > 6000000:
+            if projected_return_size > max_return_size:
                 record_lists_to_reingest.append(
                     [create_reingestion_record(original_record)]
                 )
                 del rec["data"]
                 rec["result"] = "Dropped"
+    return record_lists_to_reingest
 
-    # call putrecord_batch/putRecords for each group of up to 500 records to be re-ingested
-    if record_lists_to_reingest:
-        records_reingested_so_far = 0
-        max_batch_size = 500
-        flattened_list = [r for sublist in record_lists_to_reingest for r in sublist]
-        for i in range(0, len(flattened_list), max_batch_size):
-            record_batch = flattened_list[i : i + max_batch_size]
-            # last argument is maxAttempts
-            put_records_to_firehose_stream(stream_name, record_batch)
-            records_reingested_so_far += len(record_batch)
-            print("Reingested %d/%d" % (records_reingested_so_far, len(flattened_list)))
 
-    print(
+def lambda_handler(event: dict, _context: dict) -> dict:
+    """Lambda function to transform cloudwatch logs to Splunk HEC events.
+
+    Args:
+        event (dict): Cloudwatch event
+        _context (dict): Lambda context
+
+    Returns:
+        dict: Transformed logs
+    """
+    firehose_arn = event["deliveryStreamArn"]
+    stream_name = firehose_arn.split("/")[1]
+
+    records = process_records(event["records"], firehose_arn, CONFIG)
+    record_lists_to_reingest = work_out_records_to_reingest(event, records)
+    reingest_records(record_lists_to_reingest, stream_name)
+
+    logging.info(
         "%d input records, %d returned as Ok or ProcessingFailed, %d split and re-ingested, %d re-ingested as-is"
         % (
             len(event["records"]),
