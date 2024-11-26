@@ -14,7 +14,7 @@ resource "aws_lambda_function" "firehose_lambda_transform" {
   description      = "Transform data from CloudWatch format to Splunk compatible format"
   filename         = data.archive_file.lambda_function.output_path
   role             = aws_iam_role.kinesis_firehose_lambda.arn
-  handler          = "kinesis-firehose-cloudwatch-logs-processor.handler"
+  handler          = "handler.lambda_handler"
   source_code_hash = data.archive_file.lambda_function.output_base64sha256
   runtime          = var.python_runtime
   timeout          = var.transform_lambda_function_timeout
@@ -55,7 +55,7 @@ resource "aws_lambda_function" "firehose_lambda_retry" {
   function_name    = "${var.environment_prefix_variable}-splunk-fh-retry"
   description      = "Reingest logs from the retries prefix of the s3 bucket back into firehose"
   role             = aws_iam_role.kinesis_firehose_lambda.arn
-  handler          = ""
+  handler          = "handler.lambda_handler"
   source_code_hash = data.archive_file.retry_lambda_function.output_base64sha256
   runtime = var.python_runtime
   timeout = var.retry_lambda_function_timeout
@@ -91,12 +91,12 @@ resource "aws_lambda_event_source_mapping" "retry_lambda_trigger" {
 
 # REPROCESS FAILED LAMBDA
 
-resource "aws_lambda_function" "firehose_lambda_retry" {
+resource "aws_lambda_function" "firehose_lambda_reprocess_failed" {
   provider         = aws.lambda_processing
   function_name    = "${var.environment_prefix_variable}-splunk-fh-reprocess-failed"
   description      = "Manually triggered to move objects from /failed to /retries"
   role             = aws_iam_role.kinesis_firehose_lambda.arn
-  handler          = ""
+  handler          = "handler.lambda_handler"
   source_code_hash = data.archive_file.retry_lambda_function.output_base64sha256
   runtime = var.python_runtime
   timeout = var.failed_lambda_function_timeout
@@ -117,7 +117,7 @@ resource "aws_lambda_function" "firehose_lambda_retry" {
   }
 }
 
-data "archive_file" "retry_lambda_function" {
+data "archive_file" "reprocess_failed_lambda_function" {
     type = "zip"
     source_file = "${var.failed_lambda_path}.py"
     output_path = "${var.failed_lambda_path}.zip"
