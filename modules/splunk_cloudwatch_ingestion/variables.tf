@@ -228,10 +228,6 @@ variable "failed_lambda_path" {
   default = "../../lambdas/process_failures_lambda/src/mbtp_splunk_cloudwatch_process_failures/handler"
 }
 
-variable "firehose_name" {
-  description = "firehose name"
-}
-
 variable "sns_failed_splunk_subscription_emails" {
   description = "List of emails for people who need to be aware when a log event is moved ot the /failed prefix of the s3 bucket."
   default     = []
