@@ -91,7 +91,7 @@ resource "aws_lambda_event_source_mapping" "retry_lambda_trigger" {
 
 # REPROCESS FAILED LAMBDA
 
-resource "aws_lambda_function" "firehose_lambda_retry" {
+resource "aws_lambda_function" "firehose_lambda_reprocess_failed" {
   provider         = aws.lambda_processing
   function_name    = "${var.environment_prefix_variable}-splunk-fh-reprocess-failed"
   description      = "Manually triggered to move objects from /failed to /retries"
@@ -117,7 +117,7 @@ resource "aws_lambda_function" "firehose_lambda_retry" {
   }
 }
 
-data "archive_file" "retry_lambda_function" {
+data "archive_file" "reprocess_failed_lambda_function" {
     type = "zip"
     source_file = "${var.failed_lambda_path}.py"
     output_path = "${var.failed_lambda_path}.zip"
