@@ -307,10 +307,10 @@ def process_cloudwatch_log_record(
 
         log_events = [
             event
-            for e in data["logEvents"]
+            for log_event in data["logEvents"]
             if (
                 event := transform_cloudwatch_log_event(
-                    e,
+                    log_event,
                     index,
                     sourcetype,
                     sourcetype_name,
