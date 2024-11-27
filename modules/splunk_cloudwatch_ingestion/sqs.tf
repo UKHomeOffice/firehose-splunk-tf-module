@@ -14,7 +14,7 @@ resource "aws_sqs_queue_policy" "lambda_dlq_policy" {
         Sid       = "AllowLambdaSendMessage"
         Effect    = "Allow"
         Principal = {
-          AWS = "arn:aws:iam::${var.account_ids[var.account]}:role/${var.kinesis_firehose_lambda_role_name}"
+          AWS = "arn:aws:iam::${var.account_id}:role/${var.kinesis_firehose_lambda_role_name}"
         }
         Action    = "sqs:SendMessage"
         Resource  = aws_sqs_queue.transform_lambda_dlq.arn

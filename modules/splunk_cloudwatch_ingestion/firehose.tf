@@ -24,7 +24,7 @@ resource "aws_kinesis_firehose_delivery_stream" "kinesis_firehose" {
     retry_duration             = var.retry_duration
 
     s3_configuration {
-      role_arn           = "arn:aws:iam::${var.account_ids[var.account]}:role/${var.kinesis_firehose_role_name}"
+      role_arn           = "arn:aws:iam::${var.account_id}:role/${var.kinesis_firehose_role_name}"
       prefix             = "/retries/"
       bucket_arn         = var.firehose_failures_bucket_arn
       buffering_size     = var.kinesis_firehose_buffer
@@ -44,7 +44,7 @@ resource "aws_kinesis_firehose_delivery_stream" "kinesis_firehose" {
         }
         parameters {
           parameter_name  = "RoleArn"
-          parameter_value = "arn:aws:iam::${var.account_ids[var.account]}:role/${var.kinesis_firehose_role_name}"
+          parameter_value = "arn:aws:iam::${var.account_id}:role/${var.kinesis_firehose_role_name}"
         }
         parameters {
           parameter_name  = "BufferSizeInMBs"
@@ -59,7 +59,7 @@ resource "aws_kinesis_firehose_delivery_stream" "kinesis_firehose" {
 
     cloudwatch_logging_options {
       enabled         = var.enable_fh_cloudwatch_logging
-      log_group_name  = "/aws/kinesisfirehose/${var.firehose_name}"
+      log_group_name  = "/aws/kinesisfirehose/${var.environment_prefix_variable}-firehose-cloudwatch-to-splunk"
       log_stream_name = var.log_stream_name
     }
   }

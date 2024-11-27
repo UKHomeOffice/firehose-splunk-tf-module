@@ -12,3 +12,7 @@ variable "config_s3_key" {
   description = "The key (path) to the YAML configuration file in the S3 bucket"
   type        = string
 }
+
+variable "account" {
+  description = "The aws account where the firehose is hosted."
+}

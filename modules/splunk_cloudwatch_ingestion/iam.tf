@@ -34,7 +34,7 @@ data "aws_iam_policy_document" "lambda_policy_doc" {
     ]
 
     resources = [
-      for log_group in var.cloudwatch_log_group_subscription_to_firehose : "arn:aws:logs:${var.region}:${var.account_ids[var.account]}:log-group:${log_group}:*"
+      for log_group in var.cloudwatch_log_group_subscription_to_firehose : "arn:aws:logs:${var.region}:${var.account_id}:log-group:${log_group}:*"
     ]
 
     effect = "Allow"
@@ -46,7 +46,7 @@ data "aws_iam_policy_document" "lambda_policy_doc" {
     ]
 
     resources = [
-      "arn:aws:firehose:${var.region}:${var.account_ids[var.account]}:deliverystream/*"
+      "arn:aws:firehose:${var.region}:${var.account_id}:deliverystream/*"
     ]
   }
 
@@ -56,7 +56,7 @@ data "aws_iam_policy_document" "lambda_policy_doc" {
     ]
 
     resources = [
-      for log_group in var.cloudwatch_log_group_subscription_to_firehose : "arn:aws:logs:${var.region}:${var.account_ids[var.account]}:log-group:${log_group}:log-stream:*"
+      for log_group in var.cloudwatch_log_group_subscription_to_firehose : "arn:aws:logs:${var.region}:${var.account_id}:log-group:${log_group}:log-stream:*"
     ]
 
     effect = "Allow"
@@ -68,7 +68,7 @@ data "aws_iam_policy_document" "lambda_policy_doc" {
     ]
 
     resources = [
-      "arn:aws:logs:${var.region}:${var.account_ids[var.account]}:log-group:*"
+      "arn:aws:logs:${var.region}:${var.account_id}:log-group:*"
     ]
 
     effect = "Allow"
@@ -80,7 +80,7 @@ data "aws_iam_policy_document" "lambda_policy_doc" {
     ]
 
     resources = [
-      for log_group in var.cloudwatch_log_group_subscription_to_firehose : "arn:aws:logs:${var.region}:${var.account_ids[var.account]}:log-group:${log_group}"
+      for log_group in var.cloudwatch_log_group_subscription_to_firehose : "arn:aws:logs:${var.region}:${var.account_id}:log-group:${log_group}"
     ]
 
     effect = "Allow"
@@ -99,7 +99,7 @@ data "aws_iam_policy_document" "lambda_policy_doc" {
 }
 
 resource "aws_iam_policy" "lambda_transform_policy" {
-  name   = "${var.environment_prefix_variable}_${var.lambda_iam_policy_name}_${local.region_short}"
+  name   = "${var.environment_prefix_variable}_${var.lambda_iam_policy_name}"
   policy = data.aws_iam_policy_document.lambda_policy_doc.json
 }
 
@@ -165,8 +165,8 @@ data "aws_iam_policy_document" "kinesis_firehose_policy_document" {
     ]
 
     resources = [
-      "arn:aws:lambda:eu-west-1:${var.account_ids[var.account]}:function:kinesis-firehose-transform:$LATEST",
-      "arn:aws:lambda:eu-west-2:${var.account_ids[var.account]}:function:kinesis-firehose-transform:$LATEST",
+      "arn:aws:lambda:eu-west-1:${var.account_id}:function:kinesis-firehose-transform:$LATEST",
+      "arn:aws:lambda:eu-west-2:${var.account_id}:function:kinesis-firehose-transform:$LATEST",
     ]
   }
 
@@ -176,7 +176,7 @@ data "aws_iam_policy_document" "kinesis_firehose_policy_document" {
     ]
 
     resources = [
-      "arn:aws:logs:${var.region}:${lookup(var.account_ids, var.account)}:log-group:/aws/kinesisfirehose/*"
+      "arn:aws:logs:${var.region}:${var.account_id}:log-group:/aws/kinesisfirehose/*"
     ]
 
     effect = "Allow"
@@ -184,7 +184,7 @@ data "aws_iam_policy_document" "kinesis_firehose_policy_document" {
 }
 
 resource "aws_iam_policy" "kinesis_firehose_iam_policy" {
-  name   = "${var.environment_prefix_variable}_${var.kinesis_firehose_iam_policy_name}_${local.region_short}"
+  name   = "${var.environment_prefix_variable}_${var.kinesis_firehose_iam_policy_name}"
   policy = data.aws_iam_policy_document.kinesis_firehose_policy_document.json
 }
 
@@ -235,8 +235,8 @@ data "aws_iam_policy_document" "cloudwatch_to_fh_access_policy" {
     effect = "Allow"
 
     resources = [
-      "arn:aws:firehose:eu-west-1:${var.account_ids[var.account]}:deliverystream/*",
-      "arn:aws:firehose:eu-west-2:${var.account_ids[var.account]}:deliverystream/*",
+      "arn:aws:firehose:eu-west-1:${var.account_id}:deliverystream/*",
+      "arn:aws:firehose:eu-west-2:${var.account_id}:deliverystream/*",
     ]
   }
 
@@ -254,7 +254,7 @@ data "aws_iam_policy_document" "cloudwatch_to_fh_access_policy" {
 }
 
 resource "aws_iam_policy" "cloudwatch_to_fh_access_policy" {
-  name        = "${var.environment_prefix_variable}_${var.cloudwatch_to_fh_access_policy_name}_${local.region_short}"
+  name        = "${var.environment_prefix_variable}_${var.cloudwatch_to_fh_access_policy_name}"
   description = "Cloudwatch to Firehose Subscription Policy"
   policy      = data.aws_iam_policy_document.cloudwatch_to_fh_access_policy.json
 }
