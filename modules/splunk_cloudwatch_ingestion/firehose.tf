@@ -64,7 +64,7 @@ resource "aws_kinesis_firehose_delivery_stream" "kinesis_firehose" {
     }
   }
 
-  tags = local.all_tags
+  tags = var.tags
 
   lifecycle {
     ignore_changes = [

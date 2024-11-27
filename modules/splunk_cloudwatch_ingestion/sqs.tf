@@ -5,7 +5,7 @@ resource "aws_sqs_queue" "transform_lambda_dlq" {
 }
 
 resource "aws_sqs_queue_policy" "lambda_dlq_policy" {
-  queue_url = aws_sqs_queue.lambda_dlq.id
+  queue_url = aws_sqs_queue.transform_lambda_dlq.id
 
   policy = jsonencode({
     Version = "2012-10-17"
