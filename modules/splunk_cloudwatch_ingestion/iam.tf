@@ -19,7 +19,7 @@ resource "aws_iam_role" "kinesis_firehose_lambda" {
 POLICY
 
 
-  tags = local.all_tags
+  tags = var.tags
   lifecycle {
     ignore_changes = [
       tags
@@ -92,7 +92,7 @@ data "aws_iam_policy_document" "lambda_policy_doc" {
     ]
     resources = [
       aws_sqs_queue.transform_lambda_dlq.arn,
-      aws_sqs_queue.retry_lambda_dql.arn
+      aws_sqs_queue.retry_sqs_dql.arn
     ]
     effect = "Allow"
   }
@@ -131,7 +131,7 @@ resource "aws_iam_role" "kinesis_firehose_role" {
 POLICY
 
 
-  tags = local.all_tags
+  tags = var.tags
   lifecycle {
     ignore_changes = [
       tags
@@ -217,7 +217,7 @@ resource "aws_iam_role" "cloudwatch_to_firehose_trust" {
 ROLE
 
 
-  tags = local.all_tags
+  tags = var.tags
     lifecycle {
     ignore_changes = [
       tags

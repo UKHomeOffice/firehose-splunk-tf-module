@@ -30,7 +30,7 @@ resource "aws_lambda_function" "firehose_lambda_transform" {
     mode = "Active"  
   }
 
-  tags = local.all_tags
+  tags = var.tags
   lifecycle {
     ignore_changes = [
       tags
@@ -67,7 +67,7 @@ resource "aws_lambda_function" "firehose_lambda_retry" {
     mode = "Active"
   }
 
-  tags = local.all_tags
+  tags = var.tags
 
   lifecycle {
     ignore_changes = [ 
@@ -108,7 +108,7 @@ resource "aws_lambda_function" "firehose_lambda_reprocess_failed" {
     mode = "Active"
   }
 
-  tags = local.all_tags
+  tags = var.tags
 
   lifecycle {
     ignore_changes = [ 
