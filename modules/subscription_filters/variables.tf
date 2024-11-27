@@ -16,3 +16,7 @@ variable "config_s3_key" {
 variable "account" {
   description = "The aws account where the firehose is hosted."
 }
+
+variable "region" {
+  description = "the AWS region where the firehose is running"
+}
