@@ -4,7 +4,7 @@ data "aws_s3_object" "config_file" {
 }
 
 data "template_file" "parsed_config" {
-  template = filebase64decode(data.aws_s3_object.config_file.body)
+  template = base64decode(data.aws_s3_object.config_file.body)
 }
 
 locals {
