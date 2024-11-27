@@ -237,3 +237,13 @@ variable "sns_failed_splunk_subscription_emails" {
 variable "environment_prefix_variable" {
   description = "Envirment prefix provided by the importing module in order to ensure resources have unique names."
 }
+
+variable "region" {
+  description = "the AWS region where the firehose is running"
+}
+
+variable "tags" {
+  description = "A map of additional tags to associate with the resource"
+  type        = map(string)
+  default     = {}
+}
