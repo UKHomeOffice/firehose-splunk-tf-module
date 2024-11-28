@@ -36,8 +36,8 @@ resource "aws_lambda_function" "firehose_lambda_transform" {
 # Code supplied to AWS by Splunk.
 data "archive_file" "lambda_function" {
   type        = "zip"
-  source_file = "${var.transform_lambda_path}.py"
-  output_path = "${var.transform_lambda_path}.zip"
+  source_file = "${path.module}/../lambdas/transformation_lambda/src/mbtp_splunk_cloudwatch_transformation/handler.py"
+  output_path = "${path.module}/../lambdas/transformation_lambda/src/mbtp_splunk_cloudwatch_transformation/handler.zip"
 }
 
 
@@ -73,8 +73,8 @@ resource "aws_lambda_function" "firehose_lambda_retry" {
 
 data "archive_file" "retry_lambda_function" {
     type        = "zip"
-    source_file = "${var.retry_lambda_path}.py"
-    output_path = "${var.retry_lambda_path}.zip"
+    source_file = "${path.module}/../lambdas/reingestion_lambda/src/mbtp_splunk_cloudwatch_reingestion/handler.py"
+    output_path = "${path.module}/../lambdas/reingestion_lambda/src/mbtp_splunk_cloudwatch_reingestion/handler.zip"
 }
 
 resource "aws_lambda_event_source_mapping" "retry_lambda_trigger" {
@@ -114,6 +114,6 @@ resource "aws_lambda_function" "firehose_lambda_reprocess_failed" {
 
 data "archive_file" "reprocess_failed_lambda_function" {
     type        = "zip"
-    source_file = "${var.failed_lambda_path}.py"
-    output_path = "${var.failed_lambda_path}.zip"
+    source_file = "${path.module}/../lambdas/reingestion_lambda/src/mbtp_splunk_cloudwatch_reingestion/handler.py"
+    output_path = "${path.module}/../lambdas/reingestion_lambda/src/mbtp_splunk_cloudwatch_reingestion/handler.zip"
 }

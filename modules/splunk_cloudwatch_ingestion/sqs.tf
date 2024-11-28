@@ -38,7 +38,7 @@ resource "aws_sqs_queue" "retry_notification_queue" {
 
 # Bucket notification to populate the SQS each time an object is added to the retries/ prefix of the s3 bucket.
 resource "aws_s3_bucket_notification" "bucket_notification" {
-  bucket = var.firehose_failures_bucket_id
+  bucket = var.firehose_failures_bucket_name
 
   queue {
     queue_arn     = aws_sqs_queue.retry_notification_queue.arn
