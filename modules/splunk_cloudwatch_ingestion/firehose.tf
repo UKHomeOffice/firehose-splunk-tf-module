@@ -6,7 +6,6 @@ locals {
 resource "aws_kinesis_firehose_delivery_stream" "kinesis_firehose" {
   # checkov:skip=CKV_AWS_240:A CMK is being used for failed events sent to s3. It cannot be used for the primary destination, which is Splunk.
   # checkov:skip=CKV_AWS_241:A CMK is being used for failed events sent to s3. It cannot be used for the primary destination, which is Splunk.
-  provider    = aws.kinesis_firehose
   name        = "${var.environment_prefix_variable}-firehose-cloudwatch-to-splunk"
   destination = "splunk"
 
