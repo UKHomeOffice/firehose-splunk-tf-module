@@ -207,6 +207,7 @@ variable "terraform_iam_role" {
 
 variable "config_file_path" {
   description = "Path to the YAML config path"
+  default = ""
 }
 
 variable "splunk_hec_token" {
@@ -215,17 +216,17 @@ variable "splunk_hec_token" {
 
 variable "transform_lambda_path" {
   description = "path to the transform lambda handler (N.B. include file name but not extention)"
-  default = "../../lambdas/transformation_lambda/src/mbtp_splunk_cloudwatch_transformation"
+  default = "../../lambdas/transformation_lambda/src/mbtp_splunk_cloudwatch_transformation/handler"
 }
 
 variable "retry_lambda_path" {
   description = "path to the retry lambda handler (N.B. include file name but not extention)"
-  default = "../../lambdas/reingestion_lambda/src/mbtp_splunk_cloudwatch_reingestion"
+  default = "../../lambdas/reingestion_lambda/src/mbtp_splunk_cloudwatch_reingestion/handler"
 }
 
 variable "failed_lambda_path" {
   description = "path to failed lambda handler (N.B. include file name but not extention)"
-  default = "../../lambdas/process_failures_lambda/src/mbtp_splunk_cloudwatch_process_failures"
+  default = "../../lambdas/process_failures_lambda/src/mbtp_splunk_cloudwatch_process_failures/handler"
 }
 
 variable "sns_failed_splunk_subscription_emails" {
