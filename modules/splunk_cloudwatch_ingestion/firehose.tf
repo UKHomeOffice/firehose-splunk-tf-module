@@ -1,8 +1,3 @@
-provider "aws" {
-  alias  = "kinesis_firehose"
-  region = var.region
-}
-
 locals {
   config= yamldecode(file("${var.config_file_path}"))
 }

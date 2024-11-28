@@ -1,8 +1,3 @@
-provider "aws" {
-  alias  = "lambda_processing"
-  region = var.region
-}
-
 #TRANSFORM LAMBDA
 
 resource "aws_lambda_function" "firehose_lambda_transform" {
