@@ -232,3 +232,7 @@ variable "tags" {
 variable "account_id" {
   description = "The aws account id where the firehose is hosted."
 }
+
+variable "config_disk_path" {
+  description = "path to config on disk"
+}
