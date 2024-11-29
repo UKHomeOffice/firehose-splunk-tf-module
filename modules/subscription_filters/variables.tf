@@ -20,3 +20,7 @@ variable "account" {
 variable "region" {
   description = "the AWS region where the firehose is running"
 }
+
+variable "config_disk_path" {
+  description = "path to config on disk"
+}
