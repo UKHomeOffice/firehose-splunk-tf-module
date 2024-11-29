@@ -14,7 +14,7 @@ resource "aws_sqs_queue_policy" "lambda_dlq_policy" {
         Sid       = "AllowLambdaSendMessage"
         Effect    = "Allow"
         Principal = {
-          AWS = "arn:aws:iam::${var.account_id}:role/${var.kinesis_firehose_lambda_role_name}"
+          AWS = "arn:aws:iam::${var.account_id}:role/${var.environment_prefix_variable}-${var.kinesis_firehose_lambda_role_name}"
         }
         Action    = "sqs:SendMessage"
         Resource  = aws_sqs_queue.transform_lambda_dlq.arn
@@ -45,6 +45,24 @@ resource "aws_s3_bucket_notification" "bucket_notification" {
     events        = ["s3:ObjectCreated:*"]
     filter_prefix = "/retries"
   }
+}
+
+resource "aws_sqs_queue_policy" "s3_sqs" {
+  queue_url = aws_sqs_queue.retry_notification_queue.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow",
+        Principal = {
+          AWS = "arn:aws:s3:::${var.firehose_failures_bucket_name}"
+        },
+        Action = "sqs:SendMessage",
+        Resource = aws_sqs_queue.retry_notification_queue.arn
+      }
+    ]
+  })
 }
 
 
