@@ -14,14 +14,14 @@ resource "aws_lambda_function" "firehose_lambda_transform" {
   timeout                        = var.transform_lambda_function_timeout
   memory_size                    = var.transform_lambda_transform_memory_size
   layers                         = ["arn:aws:lambda:${var.region}:580247275435:layer:LambdaInsightsExtension:53"]
-  reserved_concurrent_executions = var.transform_lambda_concurrency_limit 
+  reserved_concurrent_executions = var.transform_lambda_concurrency_limit
 
   dead_letter_config {
     target_arn = aws_sqs_queue.transform_lambda_dlq.arn
   }
 
   tracing_config {
-    mode = "Active"  
+    mode = "Active"
   }
 
   tags = var.tags
@@ -36,8 +36,8 @@ resource "aws_lambda_function" "firehose_lambda_transform" {
 # Code supplied to AWS by Splunk.
 data "archive_file" "lambda_function" {
   type        = "zip"
-  source_file = "${path.module}/../lambdas/transformation_lambda/src/mbtp_splunk_cloudwatch_transformation/handler.py"
-  output_path = "${path.module}/../lambdas/transformation_lambda/src/mbtp_splunk_cloudwatch_transformation/handler.zip"
+  source_dir  = "${path.module}/lambdas/transformation_lambda/src/mbtp_splunk_cloudwatch_transformation/"
+  output_path = "${path.module}/lambdas/transformation_lambda/src/mbtp_splunk_cloudwatch_transformation/handler.zip"
 }
 
 
@@ -55,7 +55,7 @@ resource "aws_lambda_function" "firehose_lambda_retry" {
   timeout                        = var.retry_lambda_function_timeout
   memory_size                    = var.retry_lambda_transform_memory_size
   layers                         = ["arn:aws:lambda:${var.region}:580247275435:layer:LambdaInsightsExtension:53"]
-  reserved_concurrent_executions = var.retry_lambda_concurrency_limit 
+  reserved_concurrent_executions = var.retry_lambda_concurrency_limit
 
 
   tracing_config {
@@ -65,16 +65,16 @@ resource "aws_lambda_function" "firehose_lambda_retry" {
   tags = var.tags
 
   lifecycle {
-    ignore_changes = [ 
-        tags
-     ]
+    ignore_changes = [
+      tags
+    ]
   }
 }
 
 data "archive_file" "retry_lambda_function" {
-    type        = "zip"
-    source_file = "${path.module}/../lambdas/reingestion_lambda/src/mbtp_splunk_cloudwatch_reingestion/handler.py"
-    output_path = "${path.module}/../lambdas/reingestion_lambda/src/mbtp_splunk_cloudwatch_reingestion/handler.zip"
+  type        = "zip"
+  source_dir  = "${path.module}/lambdas/reingestion_lambda/src/mbtp_splunk_cloudwatch_reingestion/"
+  output_path = "${path.module}/../lambdas/reingestion_lambda/src/mbtp_splunk_cloudwatch_reingestion/handler.zip"
 }
 
 resource "aws_lambda_event_source_mapping" "retry_lambda_trigger" {
@@ -97,7 +97,7 @@ resource "aws_lambda_function" "firehose_lambda_reprocess_failed" {
   timeout                        = var.failed_lambda_function_timeout
   memory_size                    = var.failed_lambda_transform_memory_size
   layers                         = ["arn:aws:lambda:${var.region}:580247275435:layer:LambdaInsightsExtension:53"]
-  reserved_concurrent_executions = var.failed_lambda_concurrency_limit 
+  reserved_concurrent_executions = var.failed_lambda_concurrency_limit
 
   tracing_config {
     mode = "Active"
@@ -106,14 +106,14 @@ resource "aws_lambda_function" "firehose_lambda_reprocess_failed" {
   tags = var.tags
 
   lifecycle {
-    ignore_changes = [ 
-        tags
-     ]
+    ignore_changes = [
+      tags
+    ]
   }
 }
 
 data "archive_file" "reprocess_failed_lambda_function" {
-    type        = "zip"
-    source_file = "${path.module}/../lambdas/reingestion_lambda/src/mbtp_splunk_cloudwatch_reingestion/handler.py"
-    output_path = "${path.module}/../lambdas/reingestion_lambda/src/mbtp_splunk_cloudwatch_reingestion/handler.zip"
+  type        = "zip"
+  source_dir  = "${path.module}/lambdas/process_failures_lambda/src/mbtp_splunk_cloudwatch_process_failures/"
+  output_path = "${path.module}/../lambdas/process_failures_lambda/src/mbtp_splunk_cloudwatch_process_failures/handler.zip"
 }
