@@ -56,7 +56,7 @@ data "aws_iam_policy_document" "lambda_policy_doc" {
     ]
 
     resources = [
-      for log_group_name, log_group_data in locals.config.log_groups : "arn:aws:logs:${var.region}:${var.account_id}:log-group:${log_group_name}:log-stream:*"
+      for log_group_name, log_group_data in local.config.log_groups : "arn:aws:logs:${var.region}:${var.account_id}:log-group:${log_group_name}:log-stream:*"
     ]
 
     effect = "Allow"
@@ -80,7 +80,7 @@ data "aws_iam_policy_document" "lambda_policy_doc" {
     ]
 
     resources = [
-      for log_group_name, log_group_data in locals.config.log_groups : "arn:aws:logs:${var.region}:${var.account_id}:log-group:${log_group_name}:log-stream:*"
+      for log_group_name, log_group_data in local.config.log_groups : "arn:aws:logs:${var.region}:${var.account_id}:log-group:${log_group_name}:log-stream:*"
     ]
 
     effect = "Allow"
