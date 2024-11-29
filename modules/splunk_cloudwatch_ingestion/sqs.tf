@@ -54,12 +54,17 @@ resource "aws_sqs_queue_policy" "s3_sqs" {
     Version = "2012-10-17"
     Statement = [
       {
-        Effect = "Allow",
+        Effect    = "Allow"
         Principal = {
-          AWS = "arn:aws:s3:::${var.firehose_failures_bucket_name}"
-        },
-        Action = "sqs:SendMessage",
-        Resource = aws_sqs_queue.retry_notification_queue.arn
+          Service = "s3.amazonaws.com"
+        }
+        Action    = "sqs:SendMessage"
+        Resource  = aws_sqs_queue.retry_notification_queue.arn
+        Condition = {
+          ArnEquals = {
+            "aws:SourceArn" = "arn:aws:s3:::${var.firehose_failures_bucket_name}"
+          }
+        }
       }
     ]
   })

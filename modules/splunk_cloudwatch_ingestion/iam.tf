@@ -34,7 +34,7 @@ data "aws_iam_policy_document" "lambda_policy_doc" {
     ]
 
     resources = [
-      for log_group in var.cloudwatch_log_group_subscription_to_firehose : "arn:aws:logs:${var.region}:${var.account_id}:log-group:${log_group}:*"
+      for log_group_name, log_group_data in local.config.log_groups : "arn:aws:logs:${var.region}:${var.account_id}:log-group:${log_group_name}:*"
     ]
 
     effect = "Allow"
@@ -89,13 +89,12 @@ data "aws_iam_policy_document" "lambda_policy_doc" {
   statement {
     actions = [
       "sqs:SendMessage",
-      "sqs:RecieveMessage",
+      "sqs:ReceiveMessage",
       "sqs:DeleteMessage",
       "sqs:GetQueueAttributes"
     ]
     resources = [
       aws_sqs_queue.transform_lambda_dlq.arn,
-      aws_sqs_queue.retry_notification_queue.arn,
       aws_sqs_queue.retry_notification_queue.arn
     ]
     effect = "Allow"
