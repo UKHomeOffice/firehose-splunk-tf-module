@@ -91,6 +91,7 @@ resource "aws_lambda_event_source_mapping" "retry_lambda_trigger" {
 # REPROCESS FAILED LAMBDA
 
 resource "aws_lambda_function" "firehose_lambda_reprocess_failed" {
+  # checkov:skip=CKV_AWS_116:DLQ not required for manually triggered lambda
   # checkov:skip=CKV_AWS_117:Doesn't need to be configured in a VPC as networking is not handled at this level. 
   # checkov:skip=CKV_AWS_50:X-Ray tracing not required for this function
   # checkov:skip=CKV_AWS_272:Code-signing not required for this function
