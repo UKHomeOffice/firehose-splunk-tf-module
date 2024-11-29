@@ -45,6 +45,10 @@ data "archive_file" "lambda_function" {
 # RETRY LAMBDA 
 
 resource "aws_lambda_function" "firehose_lambda_retry" {
+  # checkov:skip=CKV_AWS_116:DLQ is on the reingestion SQS.
+  # checkov:skip=CKV_AWS_117:Doesn't need to be configured in a VPC as networking is not handled at this level. 
+  # checkov:skip=CKV_AWS_50:X-Ray tracing not required for this function
+  # checkov:skip=CKV_AWS_272:Code-signing not required for this function
   function_name                  = "${var.environment_prefix_variable}-splunk-fh-retry"
   description                    = "Reingest logs from the retries prefix of the s3 bucket back into firehose"
   filename                       = data.archive_file.retry_lambda_function.output_path
@@ -87,6 +91,9 @@ resource "aws_lambda_event_source_mapping" "retry_lambda_trigger" {
 # REPROCESS FAILED LAMBDA
 
 resource "aws_lambda_function" "firehose_lambda_reprocess_failed" {
+  # checkov:skip=CKV_AWS_117:Doesn't need to be configured in a VPC as networking is not handled at this level. 
+  # checkov:skip=CKV_AWS_50:X-Ray tracing not required for this function
+  # checkov:skip=CKV_AWS_272:Code-signing not required for this function
   function_name                  = "${var.environment_prefix_variable}-splunk-fh-reprocess-failed"
   description                    = "Manually triggered to move objects from /failed to /retries"
   filename                       = data.archive_file.reprocess_failed_lambda_function.output_path
