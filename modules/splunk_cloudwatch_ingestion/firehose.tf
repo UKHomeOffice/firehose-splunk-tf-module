@@ -1,7 +1,3 @@
-locals {
-  config= yamldecode(file("${var.config_file_path}"))
-}
-
 # Processing enabled kinesis firehose
 resource "aws_kinesis_firehose_delivery_stream" "kinesis_firehose" {
   # checkov:skip=CKV_AWS_240:A CMK is being used for failed events sent to s3. It cannot be used for the primary destination, which is Splunk.
