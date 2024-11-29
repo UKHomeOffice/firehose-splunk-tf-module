@@ -1,7 +1,8 @@
 # SQS for transform lambda deadletter queue
 resource "aws_sqs_queue" "transform_lambda_dlq" {
-  name                      = "${var.environment_prefix_variable}-splunk-fh-transform-dlq"
-  kms_master_key_id         = aws_kms_key.firehose_key.id
+  name                       = "${var.environment_prefix_variable}-splunk-fh-transform-dlq"
+  kms_master_key_id          = aws_kms_key.firehose_key.id
+  visibility_timeout_seconds = 5400
 }
 
 resource "aws_sqs_queue_policy" "lambda_dlq_policy" {
@@ -27,8 +28,9 @@ resource "aws_sqs_queue_policy" "lambda_dlq_policy" {
 
 # SQS for retry lambda
 resource "aws_sqs_queue" "retry_notification_queue" {
-  name                = "${var.environment_prefix_variable}-retry-sqs-queue"
-  kms_master_key_id   = aws_kms_key.firehose_key.id
+  name                       = "${var.environment_prefix_variable}-retry-sqs-queue"
+  kms_master_key_id          = aws_kms_key.firehose_key.id
+  visibility_timeout_seconds = 5400
 
   redrive_policy = jsonencode({
     deadLetterTargetArn = aws_sqs_queue.retry_sqs_dql.arn 
@@ -73,6 +75,7 @@ resource "aws_sqs_queue_policy" "s3_sqs" {
 
 # SQS for retry sqs deadletter queue.
 resource "aws_sqs_queue" "retry_sqs_dql" {
-    name                = "${var.environment_prefix_variable}-splunk-fh-retry-dlq"
-    kms_master_key_id   = aws_kms_key.firehose_key.id
+    name                       = "${var.environment_prefix_variable}-splunk-fh-retry-dlq"
+    kms_master_key_id          = aws_kms_key.firehose_key.id
+    visibility_timeout_seconds = 5400
 }

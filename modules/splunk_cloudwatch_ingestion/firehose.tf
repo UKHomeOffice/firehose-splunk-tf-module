@@ -14,7 +14,7 @@ resource "aws_kinesis_firehose_delivery_stream" "kinesis_firehose" {
     retry_duration             = var.retry_duration
 
     s3_configuration {
-      role_arn           = "arn:aws:iam::${var.account_id}:role/${var.environment_prefix_variable}-${var.kinesis_firehose_role_name}"
+      role_arn           = aws_iam_role.kinesis_firehose_role.arn
       prefix             = "/retries/"
       bucket_arn         = var.firehose_failures_bucket_arn
       buffering_size     = var.kinesis_firehose_buffer
@@ -34,7 +34,7 @@ resource "aws_kinesis_firehose_delivery_stream" "kinesis_firehose" {
         }
         parameters {
           parameter_name  = "RoleArn"
-          parameter_value = "arn:aws:iam::${var.account_id}:role/${var.environment_prefix_variable}-${var.kinesis_firehose_role_name}"
+          parameter_value = aws_iam_role.kinesis_firehose_role.arn
         }
         parameters {
           parameter_name  = "BufferSizeInMBs"
