@@ -3,6 +3,10 @@ resource "aws_kms_key" "firehose_key" {
   description             = "KMS key for Kinesis Firehose S3 backup encryption"
   deletion_window_in_days = 10
   enable_key_rotation     = true
+}
+
+resource "aws_kms_key_policy" "firehose_key_policy" {
+  key_id = aws_kms_key.firehose_key.id
   policy = jsonencode({
     Version = "2012-10-17",
     Statement = [
@@ -55,10 +59,4 @@ resource "aws_kms_key" "firehose_key" {
       }
     ]
   })
-
-  depends_on = [
-    aws_sqs_queue.retry_notification_queue, 
-    aws_sqs_queue.retry_sqs_dql,
-    aws_sqs_queue.transform_lambda_dlq
-  ]
 }
