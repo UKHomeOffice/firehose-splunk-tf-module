@@ -2,7 +2,8 @@
 
 # SNS Topic
 resource "aws_sns_topic" "sns_topic_failed_splunk_events" {
-  name = "${var.environment_prefix_variable}-failed-splunk-send-notifications"
+  name              = "${var.environment_prefix_variable}-failed-splunk-send-notifications"
+  kms_master_key_id = aws_kms_key.firehose_key.id
 }
 
 
