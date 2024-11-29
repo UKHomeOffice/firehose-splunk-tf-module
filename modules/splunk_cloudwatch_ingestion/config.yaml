@@ -1,0 +1,104 @@
+log_groups:
+  /aws/eks/ctb-wld-sand1-alpha/cluster:
+    accounts:
+      - 104046402197
+    index: mbtp_secopsdsab_ctb_eks_nonlive
+    log_streams:
+      - regex: ^kube-apiserver-audit-.*
+        sourcetype: kube:kube-apiserver-audit
+      - regex: ^kube-apiserver-.*
+        sourcetype: kube:kube-apiserver
+      # - regex: ^authenticator-.*
+      #   sourcetype: ""
+    subscription_filter?: "{ ($.requestObject.metadata.annotations.event_type = \"violation\") && ($.responseObject.metadata.annotations.request_username = \"arn:*\") }"
+  /aws/eks/ctb-wld-sand1-beta/cluster:
+    accounts:
+      - 104046402197
+    index: mbtp_secopsdsab_ctb_eks_nonlive
+    log_streams:
+      - regex: ^kube-apiserver-audit-.*
+        sourcetype: kube:kube-apiserver-audit
+      - regex: ^kube-apiserver-.*
+        sourcetype: kube:kube-apiserver
+      # - regex: ^authenticator-.*
+      #   sourcetype: ""
+    subscription_filter?: "{ ($.requestObject.metadata.annotations.event_type = \"violation\") && ($.responseObject.metadata.annotations.request_username = \"arn:*\") }"
+  /aws/eks/ctb-wld-sand2-alpha/cluster:
+    accounts:
+      - 104046402197
+    index: mbtp_secopsdsab_ctb_eks_nonlive
+    log_streams:
+      - regex: ^kube-apiserver-audit-.*
+        sourcetype: kube:kube-apiserver-audit
+      - regex: ^kube-apiserver-.*
+        sourcetype: kube:kube-apiserver
+      # - regex: ^authenticator-.*
+      #   sourcetype: ""
+    subscription_filter?: "{ ($.requestObject.metadata.annotations.event_type = \"violation\") && ($.responseObject.metadata.annotations.request_username = \"arn:*\") }"
+  /aws/eks/ctb-wld-sand2-beta/cluster:
+    accounts:
+      - 104046402197
+    index: mbtp_secopsdsab_ctb_eks_nonlive
+    log_streams:
+      - regex: ^kube-apiserver-audit-.*
+        sourcetype: kube:kube-apiserver-audit
+      - regex: ^kube-apiserver-.*
+        sourcetype: kube:kube-apiserver
+      # - regex: ^authenticator-.*
+      #   sourcetype: ""
+    subscription_filter?: "{ ($.requestObject.metadata.annotations.event_type = \"violation\") && ($.responseObject.metadata.annotations.request_username = \"arn:*\") }"
+  /aws/eks/ctb-wld-infra-alpha/cluster:
+    accounts:
+      - 104046402197
+    index: mbtp_secopsdsab_ctb_eks_nonlive
+    log_streams:
+      - regex: ^kube-apiserver-audit-.*
+        sourcetype: kube:kube-apiserver-audit
+      - regex: ^kube-apiserver-.*
+        sourcetype: kube:kube-apiserver
+      # - regex: ^authenticator-.*
+      #   sourcetype: ""
+    subscription_filter?: "{ ($.requestObject.metadata.annotations.event_type = \"violation\") && ($.responseObject.metadata.annotations.request_username = \"arn:*\") }"
+  /aws/eks/ctb-wld-infra-beta/cluster:
+    accounts:
+      - 104046402197
+    index: mbtp_secopsdsab_ctb_eks_nonlive
+    log_streams:
+      - regex: ^kube-apiserver-audit-.*
+        sourcetype: kube:kube-apiserver-audit
+      - regex: ^kube-apiserver-.*
+        sourcetype: kube:kube-apiserver
+      # - regex: ^authenticator-.*
+      #   sourcetype: ""
+    subscription_filter?: "{ ($.requestObject.metadata.annotations.event_type = \"violation\") && ($.responseObject.metadata.annotations.request_username = \"arn:*\") }"
+  /aws/eks/ctb-wld-dev1-alpha/cluster:
+    accounts:
+      - 104046402197
+    index: mbtp_secopsdsab_ctb_eks_nonlive
+    log_streams:
+      - regex: ^kube-apiserver-audit-.*
+        sourcetype: kube:kube-apiserver-audit
+      - regex: ^kube-apiserver-.*
+        sourcetype: kube:kube-apiserver
+      # - regex: ^authenticator-.*
+      #   sourcetype: ""
+    subscription_filter?: "{ ($.requestObject.metadata.annotations.event_type = \"violation\") && ($.responseObject.metadata.annotations.request_username = \"arn:*\") }"
+  /aws/eks/ctb-wld-dev1-beta/cluster:
+    accounts:
+      - 104046402197
+    index: mbtp_secopsdsab_ctb_eks_nonlive
+    log_streams:
+      - regex: ^kube-apiserver-audit-.*
+        sourcetype: kube:kube-apiserver-audit
+      - regex: ^kube-apiserver-.*
+        sourcetype: kube:kube-apiserver
+      # - regex: ^authenticator-.*
+      #   sourcetype: ""
+    subscription_filter?: "{ ($.requestObject.metadata.annotations.event_type = \"violation\") && ($.responseObject.metadata.annotations.request_username = \"arn:*\") }"
+sourcetypes:
+  kube:kube-apiserver-audit: {}
+  kube:kube-apiserver: {}
+
+
+
+  
