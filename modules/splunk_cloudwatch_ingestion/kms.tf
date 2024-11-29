@@ -55,4 +55,10 @@ resource "aws_kms_key" "firehose_key" {
       }
     ]
   })
+
+  depends_on = [
+    aws_sqs_queue.retry_notification_queue, 
+    aws_sqs_queue.retry_sqs_dql,
+    aws_sqs_queue.transform_lambda_dlq
+  ]
 }
