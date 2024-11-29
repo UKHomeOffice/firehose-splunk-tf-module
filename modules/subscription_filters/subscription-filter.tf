@@ -10,5 +10,5 @@ resource "aws_cloudwatch_log_subscription_filter" "cloudwatch_log_filter" {
   destination_arn = var.firehose_arn
   filter_pattern  = lookup(each.value, "subscription_filter", " ")
 
-  depends_on = [ data.aws_s3_object.config_file ]
+  # depends_on = [ data.aws_s3_object.config_file ]
 }
