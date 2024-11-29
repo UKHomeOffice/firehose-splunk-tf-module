@@ -13,7 +13,9 @@ config = {
         "TEST_LOG_GROUP": {
             "accounts": ["123456789012"],
             "index": "TEST_INDEX",
-            "sourcetype": "TEST_SOURCETYPE",
+            "log_streams": [
+                {"regex": "^TEST_LOG_STREAM$", "sourcetype": "TEST_SOURCETYPE"}
+            ],
         }
     },
     "sourcetypes": {"TEST_SOURCETYPE": {}},
@@ -83,6 +85,20 @@ def test_process_cloudwatch_log_record_unknown_log_group():
         "owner": "123456789012",
         "logGroup": "BAD_LOG_GROUP",
         "logStream": "TEST_LOG_STREAM",
+        "logEvents": [],
+    }
+    assert process_cloudwatch_log_record(test_data, "123", "ARN", config) == {
+        "result": "Dropped",
+        "recordId": "123",
+    }
+
+
+def test_process_cloudwatch_log_record_unknown_log_stream():
+    test_data = {
+        "messageType": "DATA_MESSAGE",
+        "owner": "123456789012",
+        "logGroup": "TEST_LOG_GROUP",
+        "logStream": "BAD_LOG_STREAM",
         "logEvents": [],
     }
     assert process_cloudwatch_log_record(test_data, "123", "ARN", config) == {

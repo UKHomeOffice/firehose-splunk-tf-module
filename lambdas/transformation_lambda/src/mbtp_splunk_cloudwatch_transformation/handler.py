@@ -130,10 +130,23 @@ def get_validated_config() -> dict:
             "required": True,
         },
         "index": {"type": "string", "required": True},
-        "sourcetype": {
-            "type": "string",
+        "log_streams": {
+            "type": "list",
+            "schema": {
+                "type": "dict",
+                "schema": {
+                    "regex": {
+                        "type": "string",
+                        "required": True,
+                    },
+                    "sourcetype": {
+                        "type": "string",
+                        "required": True,
+                        "allowed": list(config_yaml.get("sourcetypes", {}).keys()),
+                    },
+                },
+            },
             "required": True,
-            "allowed": list(config_yaml.get("sourcetypes", {}).keys()),
         },
     }
     sourcetypes_schema = {
@@ -302,7 +315,19 @@ def process_cloudwatch_log_record(
             return {"result": "Dropped", "recordId": rec_id}
 
         index = config["log_groups"][log_group]["index"]
-        sourcetype_name = config["log_groups"][log_group]["sourcetype"]
+
+        sourcetype_name = None
+        for sourcetype in config["log_groups"][log_group]["log_streams"]:
+            if re.match(sourcetype["regex"], log_stream):
+                sourcetype_name = sourcetype["sourcetype"]
+                break
+
+        if not sourcetype_name:
+            logging.info(
+                f"Dropping as we cannot locate a sourcetype match for log_stream({log_stream})/log_group({log_group})."
+            )
+            return {"result": "Dropped", "recordId": rec_id}
+
         sourcetype = config["sourcetypes"][sourcetype_name]
 
         log_events = [

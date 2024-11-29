@@ -33,7 +33,9 @@ log_groups:
             - 123456
             - 456789
         index: TEST_INDEX
-        sourcetype: TEST_SOURCETYPE
+        log_streams: 
+            - regex: .*
+              sourcetype: TEST_SOURCETYPE
 sourcetypes: {}
 """,
         True,
@@ -46,7 +48,9 @@ log_groups:
             - 123456
             - 456789
         index: TEST_INDEX
-        sourcetype: TEST_SOURCETYPE
+        log_streams: 
+            - regex: .*
+              sourcetype: TEST_SOURCETYPE
 sourcetypes: 
     TEST_SOURCETYPE: {}
 """,
@@ -60,7 +64,9 @@ log_groups:
             - "123456"
             - 456789
         index: TEST_INDEX
-        sourcetype: TEST_SOURCETYPE
+        log_streams: 
+            - regex: .*
+              sourcetype: TEST_SOURCETYPE
 sourcetypes: 
     TEST_SOURCETYPE:
         allowlist_regexes:
@@ -80,7 +86,9 @@ log_groups:
             - 123456
             - 456789
         index: TEST_INDEX
-        sourcetype: TEST_SOURCETYPE
+        log_streams: 
+            - regex: .*
+              sourcetype: TEST_SOURCETYPE
 sourcetypes: 
     TEST_SOURCETYPE:
         allowlist_regexes:
