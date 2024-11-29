@@ -20,7 +20,9 @@ config = {
         "TEST_LOG_GROUP": {
             "accounts": ["123456789012"],
             "index": "TEST_INDEX",
-            "sourcetype": "TEST_SOURCETYPE",
+            "log_streams": [
+                {"regex": "^TEST_LOG_STREAM$", "sourcetype": "TEST_SOURCETYPE"}
+            ],
         }
     },
     "sourcetypes": {"TEST_SOURCETYPE": {}},
