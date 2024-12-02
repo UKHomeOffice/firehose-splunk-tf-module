@@ -53,10 +53,9 @@ resource "aws_lambda_function" "firehose_lambda_retry" {
   # checkov:skip=CKV_AWS_272:Code-signing not required for this function
   function_name                  = "${var.environment_prefix_variable}-splunk-fh-retry"
   description                    = "Reingest logs from the retries prefix of the s3 bucket back into firehose"
-  filename                       = data.archive_file.retry_lambda_function.output_path
+  filename                       = "${path.module}/../../lambdas/transformation_lambda/package/handler.zip"
   role                           = aws_iam_role.kinesis_firehose_lambda.arn
   handler                        = "handler.lambda_handler"
-  source_code_hash               = data.archive_file.retry_lambda_function.output_base64sha256
   runtime                        = var.python_runtime
   timeout                        = var.retry_lambda_function_timeout
   memory_size                    = var.retry_lambda_transform_memory_size
