@@ -12,3 +12,12 @@ resource "aws_cloudwatch_log_subscription_filter" "cloudwatch_log_filter" {
 
   # depends_on = [ data.aws_s3_object.config_file ]
 }
+
+resource "null_resource" "debug_config" {
+  provisioner "local-exec" {
+    command = <<EOT
+    echo "Local Config Debug:"
+    echo '${jsonencode(local.config)}'
+    EOT
+  }
+}
