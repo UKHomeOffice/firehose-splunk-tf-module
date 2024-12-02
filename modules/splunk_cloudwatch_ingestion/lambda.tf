@@ -32,14 +32,32 @@ resource "aws_lambda_function" "firehose_lambda_transform" {
   }
 }
 
+
+resource "null_resource" "lambda_exporter" {
+  provisioner "local-exec" {
+    working_dir = "${path.module}/../../lambdas/transformation_lambda"
+    command     = "bash package.sh"
+  }
+  triggers = {
+    code         = "${base64sha256(file("${path.module}/../../lambdas/transformation_lambda/src/mbtp_splunk_cloudwatch_transformation/handler.py"))}"
+    requirements = "${base64sha256(file("${path.module}/../../lambdas/transformation_lambda/requirements.txt"))}"
+  }
+}
+
+data "null_data_source" "wait_for_lambda_exporter" {
+  inputs = {
+    lambda_exporter_id = "${null_resource.lambda_exporter.id}"
+    source_dir         = "${path.module}/../../lambdas/transformation_lambda/package/"
+  }
+}
+
 # kinesis-firehose-cloudwatch-logs-processor.js was taken by copy/paste from the AWS UI. It is a predefined blueprint.
 # Code supplied to AWS by Splunk.
 data "archive_file" "lambda_function" {
   type        = "zip"
-  source_dir  = "${path.module}/../../lambdas/transformation_lambda/src/mbtp_splunk_cloudwatch_transformation/"
-  output_path = "${path.module}/../../lambdas/transformation_lambda/src/mbtp_splunk_cloudwatch_transformation/handler.zip"
+  source_dir  = data.null_data_source.wait_for_lambda_exporter.outputs["source_dir"]
+  output_path = "${path.module}/../../lambdas/transformation_lambda/package/handler.zip"
 }
-
 
 
 # RETRY LAMBDA 

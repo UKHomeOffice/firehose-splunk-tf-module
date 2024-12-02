@@ -162,3 +162,5 @@ cython_debug/
 #.idea/
 
 reports/
+package/
+venv_package/
