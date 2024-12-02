@@ -1,8 +1,6 @@
 
 resource "aws_s3_bucket" "failed_bucket" {
   bucket = var.bucket_name
-
-
 }
 
 resource "aws_s3_bucket_versioning" "failed_bucket" {
@@ -31,6 +29,39 @@ resource "aws_s3_bucket_public_access_block" "failed_bucket" {
   restrict_public_buckets = true
 }
 
-output "bucket_name" {
-  value = aws_s3_bucket.failed_bucket.bucket
+# ADD s3 BUCKET POLICY
+
+resource "aws_s3_bucket_policy" "clean_bucket_policy" {
+  bucket = aws_s3_bucket.failed_bucket.bucket
+  policy = data.aws_iam_policy_document.clean_bucket_policy.json
+}
+
+data "aws_iam_policy_document" "clean_bucket_policy" {
+  statement {
+    sid    = "DenyPutFromNonAmssRoles"
+    effect = "Deny"
+    principals {
+      type        = "AWS"
+      identifiers = ["*"]
+    }
+    actions   = ["s3:PutObject", "s3:ListMultipartUploadParts", "s3:AbortMultipartUpload"]
+    resources = "arn:aws:s3:::${var.bucket_name}/*"
+    condition {
+      test     = "StringNotEquals"
+      variable = "aws:PrincipalArn"
+      values = var.approved_s3_resources
+    }
+  }
+  statement {
+    actions   = ["*"]
+    effect    = "Deny"
+    resources = [
+      "arn:aws:s3:::${var.bucket_name}/*"
+    ]
+    condition {
+      test     = "StringNotEquals"
+      variable = "aws:PrincipalArn"
+      values = var.approved_s3_resources
+    }
+  }
 }
