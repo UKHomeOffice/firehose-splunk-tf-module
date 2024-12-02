@@ -1,30 +1,19 @@
 variable "firehose_arn" {
-  description = "The ARN of the Firehose delivery stream"
-  type        = string
-}
-
-variable "config_s3_bucket" {
-  description = "The S3 bucket where the YAML configuration file is stored"
-  type        = string
-}
-
-variable "config_s3_key" {
-  description = "The key (path) to the YAML configuration file in the S3 bucket"
+  description = "The ARN of the Firehose delivery stream."
   type        = string
 }
 
 variable "account" {
   description = "The aws account where the firehose is hosted."
-}
-
-variable "region" {
-  description = "the AWS region where the firehose is running"
+  type        = number
 }
 
 variable "config_disk_path" {
-  description = "path to config on disk"
+  description = "The path to config file on disk."
+  type        = string
 }
 
 variable "environment_prefix_variable" {
-  description = "Envirment prefix provided by the importing module in order to ensure resources have unique names."
+  description = "Environment prefix provided by the importing module in order to ensure resources have unique names."
+  type        = string
 }
