@@ -1,18 +1,8 @@
-provider "aws" {
-  alias  = "kinesis_firehose"
-  region = var.region
-}
-
-locals {
-  config= yamldecode(file("${var.config_file_path}"))
-}
-
 # Processing enabled kinesis firehose
 resource "aws_kinesis_firehose_delivery_stream" "kinesis_firehose" {
   # checkov:skip=CKV_AWS_240:A CMK is being used for failed events sent to s3. It cannot be used for the primary destination, which is Splunk.
   # checkov:skip=CKV_AWS_241:A CMK is being used for failed events sent to s3. It cannot be used for the primary destination, which is Splunk.
-  provider    = aws.kinesis_firehose
-  name        = "${var.environment_prefix_variable}-${var.firehose_name}"
+  name        = local.firehose_stream_name
   destination = "splunk"
 
   splunk_configuration {
@@ -24,12 +14,13 @@ resource "aws_kinesis_firehose_delivery_stream" "kinesis_firehose" {
     retry_duration             = var.retry_duration
 
     s3_configuration {
-      role_arn           = "arn:aws:iam::${var.account_ids[var.account]}:role/${var.kinesis_firehose_role_name}"
-      prefix             = "/retries/"
+      role_arn           = aws_iam_role.kinesis_firehose_role.arn
+      prefix             = var.s3_retries_prefix
       bucket_arn         = var.firehose_failures_bucket_arn
       buffering_size     = var.kinesis_firehose_buffer
       buffering_interval = var.kinesis_firehose_buffer_interval
-      kms_key_arn = aws_kms_key.firehose_key.arn
+      kms_key_arn        = aws_kms_key.firehose_key.arn
+      compression_format = "UNCOMPRESSED"
     }
 
     processing_configuration {
@@ -44,7 +35,7 @@ resource "aws_kinesis_firehose_delivery_stream" "kinesis_firehose" {
         }
         parameters {
           parameter_name  = "RoleArn"
-          parameter_value = "arn:aws:iam::${var.account_ids[var.account]}:role/${var.kinesis_firehose_role_name}"
+          parameter_value = aws_iam_role.kinesis_firehose_role.arn
         }
         parameters {
           parameter_name  = "BufferSizeInMBs"
@@ -59,17 +50,10 @@ resource "aws_kinesis_firehose_delivery_stream" "kinesis_firehose" {
 
     cloudwatch_logging_options {
       enabled         = var.enable_fh_cloudwatch_logging
-      log_group_name  = "/aws/kinesisfirehose/${var.firehose_name}"
+      log_group_name  = "/aws/kinesisfirehose/${local.firehose_stream_name}"
       log_stream_name = var.log_stream_name
     }
   }
 
-  tags = local.all_tags
-
-  lifecycle {
-    ignore_changes = [
-      tags,
-      splunk_configuration[0].processing_configuration[0].processors[0].parameters
-    ]
-  }
+  tags = var.tags
 }
