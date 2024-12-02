@@ -44,16 +44,6 @@ resource "null_resource" "lambda_exporter" {
   }
 }
 
-# kinesis-firehose-cloudwatch-logs-processor.js was taken by copy/paste from the AWS UI. It is a predefined blueprint.
-# Code supplied to AWS by Splunk.
-data "archive_file" "lambda_function" {
-  type        = "zip"
-  source_dir  = "${path.module}/../../lambdas/transformation_lambda/package/"
-  output_path = "${path.module}/../../lambdas/transformation_lambda/package/handler.zip"
-  depends_on  = ["null_resource.lambda_exporter"]
-}
-
-
 # RETRY LAMBDA 
 
 resource "aws_lambda_function" "firehose_lambda_retry" {
@@ -73,6 +63,7 @@ resource "aws_lambda_function" "firehose_lambda_retry" {
   layers                         = ["arn:aws:lambda:${var.region}:580247275435:layer:LambdaInsightsExtension:53"]
   reserved_concurrent_executions = var.retry_lambda_concurrency_limit
 
+  depends_on = ["null_resource.lambda_exporter"]
 
   tracing_config {
     mode = "Active"
