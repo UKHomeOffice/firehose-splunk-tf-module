@@ -41,8 +41,8 @@ data "aws_iam_policy_document" "kinesis_firehose_policy_document" {
       "s3:PutObject",
     ]
     resources = [
-      "arn:aws:s3:::${var.firehose_failures_bucket_name}",
-      "arn:aws:s3:::${var.firehose_failures_bucket_name}/*",
+      var.firehose_failures_bucket_arn,
+      "${var.firehose_failures_bucket_arn}/*",
     ]
     effect = "Allow"
   }
@@ -54,12 +54,12 @@ data "aws_iam_policy_document" "kinesis_firehose_policy_document" {
     condition {
       test     = "StringEquals"
       variable = "kms:ViaService"
-      values   = "s3.${var.region}.amazonaws.com"
+      values   = ["s3.${var.region}.amazonaws.com"]
     }
     condition {
       test     = "StringLike"
       variable = "kms:EncryptionContext:aws:s3:arn"
-      values   = "arn:aws:s3:::${var.firehose_failures_bucket_name}/*"
+      values   = ["${var.firehose_failures_bucket_arn}/*"]
     }
   }
 
