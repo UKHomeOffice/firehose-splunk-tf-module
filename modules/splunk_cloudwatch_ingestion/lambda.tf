@@ -29,7 +29,7 @@ resource "aws_lambda_function" "firehose_lambda_transform" {
       tags
     ]
   }
-  depends_on = ["null_resource.lambda_exporter"]
+  depends_on = [null_resource.lambda_exporter]
 
 }
 
