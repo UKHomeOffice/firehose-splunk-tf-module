@@ -24,3 +24,7 @@ variable "region" {
 variable "config_disk_path" {
   description = "path to config on disk"
 }
+
+variable "environment_prefix_variable" {
+  description = "Envirment prefix provided by the importing module in order to ensure resources have unique names."
+}

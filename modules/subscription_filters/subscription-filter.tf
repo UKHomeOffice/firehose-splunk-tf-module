@@ -9,6 +9,7 @@ resource "aws_cloudwatch_log_subscription_filter" "cloudwatch_log_filter" {
   log_group_name  = each.key
   destination_arn = var.firehose_arn
   filter_pattern  = lookup(each.value, "subscription_filter", " ")
+  role_arn        = aws_iam_role.cloudwatch_to_firehose.arn
 
   # depends_on = [ data.aws_s3_object.config_file ]
 }
