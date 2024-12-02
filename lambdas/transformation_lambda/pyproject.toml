@@ -23,7 +23,7 @@ test = "pdm run pytest -rP --junitxml=reports/pytest.xml --cov=src --cov-report=
 lint = "pdm run pylint src/mbtp_splunk_cloudwatch_transformation/"
 format = "pdm run black --check src/mbtp_splunk_cloudwatch_transformation/"
 check = {composite = ["format", "lint", "test"]}
-requirements = "pdm export -o requirements.txt --without-hashes" 
+requirements = "pdm export -o requirements.txt --without-hashes --prod"
 
 [tool.pdm.dev-dependencies]
 dev = [
