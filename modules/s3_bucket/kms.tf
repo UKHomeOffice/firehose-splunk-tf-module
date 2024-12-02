@@ -9,4 +9,28 @@ resource "aws_kms_alias" "s3_kms_alias" {
   target_key_id = aws_kms_key.s3_kms_key.key_id
 }
 
-# ADD IAM Policy
+resource "aws_kms_key_policy" "s3_kms_policy" {
+  key_id = aws_kms_key.s3_kms_key.id
+  policy = data.aws_iam_policy_document.s3_kms_policy.json
+}
+
+data "aws_iam_policy_document" "s3_kms_policy" {
+  statement {
+    effect = "Deny"
+    actions = [
+      "kms:GenerateDataKey",
+      "kms:Decrypt",
+      "kms:Encrypt",
+    ]
+    resources = [aws_kms_key.s3_kms_key.arn]
+    principals {
+      type        = "AWS"
+      identifiers = ["*"]
+    }
+    condition {
+      test     = "StringNotEquals"
+      variable = "aws:PrincipalArn"
+      values = var.approved_s3_resources
+    }
+  }
+}

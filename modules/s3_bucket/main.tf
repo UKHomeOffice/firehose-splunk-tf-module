@@ -29,29 +29,12 @@ resource "aws_s3_bucket_public_access_block" "failed_bucket" {
   restrict_public_buckets = true
 }
 
-# ADD s3 BUCKET POLICY
-
-resource "aws_s3_bucket_policy" "clean_bucket_policy" {
+resource "aws_s3_bucket_policy" "failed_bucket_policy" {
   bucket = aws_s3_bucket.failed_bucket.bucket
-  policy = data.aws_iam_policy_document.clean_bucket_policy.json
+  policy = data.aws_iam_policy_document.failed_bucket_policy.json
 }
 
-data "aws_iam_policy_document" "clean_bucket_policy" {
-  statement {
-    sid    = "DenyPutFromNonAmssRoles"
-    effect = "Deny"
-    principals {
-      type        = "AWS"
-      identifiers = ["*"]
-    }
-    actions   = ["s3:PutObject", "s3:ListMultipartUploadParts", "s3:AbortMultipartUpload"]
-    resources = "arn:aws:s3:::${var.bucket_name}/*"
-    condition {
-      test     = "StringNotEquals"
-      variable = "aws:PrincipalArn"
-      values = var.approved_s3_resources
-    }
-  }
+data "aws_iam_policy_document" "failed_bucket_policy" {
   statement {
     actions   = ["*"]
     effect    = "Deny"
