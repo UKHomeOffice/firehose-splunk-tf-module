@@ -9,6 +9,8 @@ resource "aws_lambda_function" "firehose_lambda_retry" {
   # checkov:skip=CKV_AWS_117:Doesn't need to be configured in a VPC as networking is not handled at this level. 
   # checkov:skip=CKV_AWS_50:X-Ray tracing not required for this function
   # checkov:skip=CKV_AWS_272:Code-signing not required for this function
+  # checkov:skip=CKV_AWS_115: Don't need a concurrency limit currently 
+  # checkov:skip=CKV_AWS_173:Nothing sensitive in the env vars
   function_name    = "${var.environment_prefix_variable}-splunk-fh-retry"
   description      = "Reingest logs from the retries prefix of the s3 bucket back into firehose"
   filename         = data.archive_file.retry_lambda_function.output_path
