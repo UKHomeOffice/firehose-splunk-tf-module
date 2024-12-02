@@ -44,19 +44,13 @@ resource "null_resource" "lambda_exporter" {
   }
 }
 
-data "null_data_source" "wait_for_lambda_exporter" {
-  inputs = {
-    lambda_exporter_id = "${null_resource.lambda_exporter.id}"
-    source_dir         = "${path.module}/../../lambdas/transformation_lambda/package/"
-  }
-}
-
 # kinesis-firehose-cloudwatch-logs-processor.js was taken by copy/paste from the AWS UI. It is a predefined blueprint.
 # Code supplied to AWS by Splunk.
 data "archive_file" "lambda_function" {
   type        = "zip"
-  source_dir  = data.null_data_source.wait_for_lambda_exporter.outputs["source_dir"]
+  source_dir  = "${path.module}/../../lambdas/transformation_lambda/package/"
   output_path = "${path.module}/../../lambdas/transformation_lambda/package/handler.zip"
+  depends_on  = ["null_resource.lambda_exporter"]
 }
 
 
