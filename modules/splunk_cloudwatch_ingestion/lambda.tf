@@ -6,10 +6,9 @@ resource "aws_lambda_function" "firehose_lambda_transform" {
   # checkov:skip=CKV_AWS_272:Code-signing not required for this function
   function_name                  = "${var.environment_prefix_variable}-splunk-fh-transform"
   description                    = "Transform data from CloudWatch format to Splunk compatible format"
-  filename                       = data.archive_file.lambda_function.output_path
+  filename                       = "${path.module}/../../lambdas/transformation_lambda/package/handler.zip"
   role                           = aws_iam_role.kinesis_firehose_lambda.arn
   handler                        = "handler.lambda_handler"
-  source_code_hash               = data.archive_file.lambda_function.output_base64sha256
   runtime                        = var.python_runtime
   timeout                        = var.transform_lambda_function_timeout
   memory_size                    = var.transform_lambda_transform_memory_size
@@ -30,6 +29,8 @@ resource "aws_lambda_function" "firehose_lambda_transform" {
       tags
     ]
   }
+  depends_on = ["null_resource.lambda_exporter"]
+
 }
 
 
@@ -53,16 +54,16 @@ resource "aws_lambda_function" "firehose_lambda_retry" {
   # checkov:skip=CKV_AWS_272:Code-signing not required for this function
   function_name                  = "${var.environment_prefix_variable}-splunk-fh-retry"
   description                    = "Reingest logs from the retries prefix of the s3 bucket back into firehose"
-  filename                       = "${path.module}/../../lambdas/transformation_lambda/package/handler.zip"
+  filename                       = data.archive_file.retry_lambda_function.output_path
   role                           = aws_iam_role.kinesis_firehose_lambda.arn
   handler                        = "handler.lambda_handler"
+  source_code_hash               = data.archive_file.retry_lambda_function.output_base64sha256
   runtime                        = var.python_runtime
   timeout                        = var.retry_lambda_function_timeout
   memory_size                    = var.retry_lambda_transform_memory_size
   layers                         = ["arn:aws:lambda:${var.region}:580247275435:layer:LambdaInsightsExtension:53"]
   reserved_concurrent_executions = var.retry_lambda_concurrency_limit
 
-  depends_on = ["null_resource.lambda_exporter"]
 
   tracing_config {
     mode = "Active"
