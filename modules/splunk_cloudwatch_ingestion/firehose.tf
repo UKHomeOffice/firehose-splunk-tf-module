@@ -2,7 +2,7 @@
 resource "aws_kinesis_firehose_delivery_stream" "kinesis_firehose" {
   # checkov:skip=CKV_AWS_240:A CMK is being used for failed events sent to s3. It cannot be used for the primary destination, which is Splunk.
   # checkov:skip=CKV_AWS_241:A CMK is being used for failed events sent to s3. It cannot be used for the primary destination, which is Splunk.
-  name        = "${var.environment_prefix_variable}-firehose-cloudwatch-to-splunk"
+  name        = local.firehose_stream_name
   destination = "splunk"
 
   splunk_configuration {
@@ -15,11 +15,12 @@ resource "aws_kinesis_firehose_delivery_stream" "kinesis_firehose" {
 
     s3_configuration {
       role_arn           = aws_iam_role.kinesis_firehose_role.arn
-      prefix             = "/retries/"
+      prefix             = var.s3_retries_prefix
       bucket_arn         = var.firehose_failures_bucket_arn
       buffering_size     = var.kinesis_firehose_buffer
       buffering_interval = var.kinesis_firehose_buffer_interval
-      kms_key_arn = aws_kms_key.firehose_key.arn
+      kms_key_arn        = aws_kms_key.firehose_key.arn
+      compression_format = "UNCOMPRESSED"
     }
 
     processing_configuration {
@@ -49,17 +50,10 @@ resource "aws_kinesis_firehose_delivery_stream" "kinesis_firehose" {
 
     cloudwatch_logging_options {
       enabled         = var.enable_fh_cloudwatch_logging
-      log_group_name  = "/aws/kinesisfirehose/${var.environment_prefix_variable}-firehose-cloudwatch-to-splunk"
+      log_group_name  = "/aws/kinesisfirehose/${local.firehose_stream_name}"
       log_stream_name = var.log_stream_name
     }
   }
 
   tags = var.tags
-
-  lifecycle {
-    ignore_changes = [
-      tags,
-      splunk_configuration[0].processing_configuration[0].processors[0].parameters
-    ]
-  }
 }

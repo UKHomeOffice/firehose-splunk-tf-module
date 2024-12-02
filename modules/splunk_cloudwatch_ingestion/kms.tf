@@ -11,25 +11,25 @@ resource "aws_kms_key_policy" "firehose_key_policy" {
     Version = "2012-10-17",
     Statement = [
       {
-        Sid       = "EnableRootAccess",
-        Effect    = "Allow",
+        Sid    = "EnableRootAccess",
+        Effect = "Allow",
         Principal = {
           AWS = "arn:aws:iam::${var.account_id}:root"
         },
-        Action    = "kms:*",
-        Resource  = "*"
+        Action   = "kms:*",
+        Resource = "*"
       },
       {
-        Sid       = "AllowS3ToUseKey",
-        Effect    = "Allow",
+        Sid    = "AllowS3ToUseKey",
+        Effect = "Allow",
         Principal = {
           Service = "s3.amazonaws.com"
         },
-        Action    = [
+        Action = [
           "kms:Encrypt",
           "kms:GenerateDataKey"
         ],
-        Resource  = "*",
+        Resource = "*",
         Condition = {
           StringEquals = {
             "aws:SourceArn" = "arn:aws:s3:::${var.firehose_failures_bucket_name}"
@@ -37,21 +37,20 @@ resource "aws_kms_key_policy" "firehose_key_policy" {
         }
       },
       {
-        Sid       = "AllowSQSToUseKey",
-        Effect    = "Allow",
+        Sid    = "AllowSQSToUseKey",
+        Effect = "Allow",
         Principal = {
           Service = "sqs.amazonaws.com"
         },
-        Action    = [
+        Action = [
           "kms:Decrypt",
           "kms:GenerateDataKey"
         ],
-        Resource  = "*",
+        Resource = "*",
         Condition = {
           "ForAnyValue:StringEquals" = {
             "aws:SourceArn" = [
               aws_sqs_queue.retry_notification_queue.arn,
-              aws_sqs_queue.transform_lambda_dlq.arn, 
               aws_sqs_queue.retry_sqs_dql.arn
             ]
           }
