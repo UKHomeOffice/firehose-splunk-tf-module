@@ -10,9 +10,12 @@ resource "null_resource" "lambda_exporter" {
 }
 
 resource "aws_lambda_function" "firehose_lambda_transform" {
+  # checkov:skip=CKV_AWS_116:DLQ is on the reingestion SQS.
   # checkov:skip=CKV_AWS_117:Doesn't need to be configured in a VPC as networking is not handled at this level. 
   # checkov:skip=CKV_AWS_50:X-Ray tracing not required for this function
   # checkov:skip=CKV_AWS_272:Code-signing not required for this function
+  # checkov:skip=CKV_AWS_115: Don't need a concurrency limit currently 
+  # checkov:skip=CKV_AWS_173:Nothing sensitive in the env vars
   function_name = "${var.environment_prefix_variable}-splunk-fh-transform"
   description   = "Transform data from CloudWatch format to Splunk compatible format"
   filename      = "${path.module}/../../lambdas/transformation_lambda/package/handler.zip"
