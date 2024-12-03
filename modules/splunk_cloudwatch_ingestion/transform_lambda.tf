@@ -4,8 +4,9 @@ resource "null_resource" "lambda_exporter" {
     command     = "bash package.sh"
   }
   triggers = {
-    code         = "${base64sha256(file("${path.module}/../../lambdas/transformation_lambda/src/mbtp_splunk_cloudwatch_transformation/handler.py"))}"
-    requirements = "${base64sha256(file("${path.module}/../../lambdas/transformation_lambda/requirements.txt"))}"
+    # code         = "${base64sha256(file("${path.module}/../../lambdas/transformation_lambda/src/mbtp_splunk_cloudwatch_transformation/handler.py"))}"
+    # requirements = "${base64sha256(file("${path.module}/../../lambdas/transformation_lambda/requirements.txt")S)}"
+    trigger = timestamp()
   }
 }
 
