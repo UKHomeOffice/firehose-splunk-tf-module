@@ -31,24 +31,26 @@ resource "aws_iam_policy" "kinesis_firehose_iam_policy" {
 }
 
 data "aws_iam_policy_document" "kinesis_firehose_policy_document" {
-  # checkov:skip=CKV_AWS_109:for testing
+  # checkov:skip=CKV_AWS_109:for testing  
   # checkov:skip=CKV_AWS_110:for testing
   # checkov:skip=CKV_AWS_111:for testing
   # checkov:skip=CKV_AWS_356:for testing
   statement {
     actions = [
-      "s3:*",
+      "s3:AbortMultipartUpload",
+      "s3:GetBucketLocation",
+      "s3:GetObject",
+      "s3:ListBucket",
+      "s3:ListBucketMultipartUploads",
+      "s3:PutObject",
     ]
-    resources = [
-      var.firehose_failures_bucket_arn,
-      "${var.firehose_failures_bucket_arn}/*",
-    ]
+    resources = ["${var.firehose_failures_bucket_arn}/*",]
     effect = "Allow"
   }
 
   statement {
     actions   = ["kms:*"]
-    resources = [var.s3_kms_key_arn]
+    resources = ["*"]
     effect    = "Allow"
   }
 
@@ -62,9 +64,10 @@ data "aws_iam_policy_document" "kinesis_firehose_policy_document" {
 
   statement {
     actions = [
-      "lambda:*",
+      "lambda:InvokeFunction",
+      "lambda:GetFunctionConfiguration",
     ]
-    resources = ["*"]
+    resources = [aws_lambda_function.firehose_lambda_transform.arn]
     effect    = "Allow"
   }
 }
