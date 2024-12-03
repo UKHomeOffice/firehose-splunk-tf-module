@@ -55,11 +55,15 @@ data "aws_iam_policy_document" "kinesis_firehose_policy_document" {
   }
 
   statement {
-    actions = ["logs:*"]
-    resources = [
-      "*"
-    ]
-    effect = "Allow"
+    actions   = ["kms:*"]
+    resources = ["*"]
+    effect    = "Allow"
+  }
+
+  statement {
+    actions   = ["logs:*"]
+    resources = ["*"]
+    effect    = "Allow"
   }
 
   statement {
