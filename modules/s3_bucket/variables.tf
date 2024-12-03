@@ -8,3 +8,8 @@ variable "approved_s3_resources" {
   default     = []
   type        = list(string)
 }
+
+variable "account_id" {
+  description = "IAM account ID"
+  type = string
+}
