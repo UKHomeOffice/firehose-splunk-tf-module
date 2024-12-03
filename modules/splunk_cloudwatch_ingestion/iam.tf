@@ -39,25 +39,20 @@ data "aws_iam_policy_document" "kinesis_firehose_policy_document" {
     actions = [
       "s3:*",
     ]
-    resources = [
-      var.firehose_failures_bucket_arn,
-      "${var.firehose_failures_bucket_arn}/*",
-    ]
-    effect = "Allow"
-  }
-
-  statement {
-    actions   = ["kms:*"]
-    resources = [var.s3_kms_key_arn]
+    resources = ["*"]
     effect    = "Allow"
   }
 
   statement {
-    actions = ["logs:*"]
-    resources = [
-      "*"
-    ]
-    effect = "Allow"
+    actions   = ["kms:*"]
+    resources = ["*"]
+    effect    = "Allow"
+  }
+
+  statement {
+    actions   = ["logs:*"]
+    resources = ["*"]
+    effect    = "Allow"
   }
 
   statement {

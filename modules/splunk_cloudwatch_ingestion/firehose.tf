@@ -31,7 +31,7 @@ resource "aws_kinesis_firehose_delivery_stream" "kinesis_firehose" {
 
         parameters {
           parameter_name  = "LambdaArn"
-          parameter_value = aws_lambda_function.firehose_lambda_transform.arn
+          parameter_value = "${aws_lambda_function.firehose_lambda_transform.arn}:$LATEST"
         }
         parameters {
           parameter_name  = "RoleArn"
