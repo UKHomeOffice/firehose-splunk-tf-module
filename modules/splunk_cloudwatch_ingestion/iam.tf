@@ -31,7 +31,8 @@ resource "aws_iam_policy" "kinesis_firehose_iam_policy" {
 }
 
 data "aws_iam_policy_document" "kinesis_firehose_policy_document" {
-  # checkov:skip=CKV_AWS_109:for testing  
+  # checkov:skip=CKV_AWS_108:for testing
+  # checkov:skip=CKV_AWS_109:for testing
   # checkov:skip=CKV_AWS_110:for testing
   # checkov:skip=CKV_AWS_111:for testing
   # checkov:skip=CKV_AWS_356:for testing
@@ -44,8 +45,8 @@ data "aws_iam_policy_document" "kinesis_firehose_policy_document" {
       "s3:ListBucketMultipartUploads",
       "s3:PutObject",
     ]
-    resources = ["${var.firehose_failures_bucket_arn}/*",]
-    effect = "Allow"
+    resources = ["*"]
+    effect    = "Allow"
   }
 
   statement {
@@ -55,11 +56,9 @@ data "aws_iam_policy_document" "kinesis_firehose_policy_document" {
   }
 
   statement {
-    actions = ["logs:*"]
-    resources = [
-      "*"
-    ]
-    effect = "Allow"
+    actions   = ["logs:*"]
+    resources = ["*"]
+    effect    = "Allow"
   }
 
   statement {

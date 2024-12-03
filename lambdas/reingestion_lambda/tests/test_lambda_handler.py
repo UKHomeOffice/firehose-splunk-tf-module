@@ -1,6 +1,7 @@
 """MBTP Splunk Cloudwatch Reingestion Lambda Tests"""
 
 import base64
+import gzip
 import io
 import json
 from os import environ
@@ -30,7 +31,7 @@ test_json_events = [
     '{"foo3": "bar3", "fields": {"firehose_errors": 3}}',
 ]
 encoded_message = "\n".join(
-    json.dumps({"rawData": base64.b64encode(x.encode()).decode()})
+    json.dumps({"rawData": base64.b64encode(gzip.compress(x.encode())).decode()})
     for x in test_json_events
 ).encode()
 

@@ -84,6 +84,10 @@ data "aws_iam_policy_document" "reingestion_lambda_policy" {
   }
   statement {
     actions   = ["kms:GenerateDataKey", "kms:Decrypt", "kms:Encrypt"]
-    resources = [var.s3_kms_key_arn]
+    resources = [var.s3_kms_key_arn, aws_kms_key.firehose_key.arn]
+  }
+  statement {
+    actions   = ["sqs:DeleteMessage", "sqs:GetQueueAttributes", "sqs:ReceiveMessage", "sqs:ChangeMessageVisibility"]
+    resources = [aws_sqs_queue.retry_notification_queue.arn]
   }
 }

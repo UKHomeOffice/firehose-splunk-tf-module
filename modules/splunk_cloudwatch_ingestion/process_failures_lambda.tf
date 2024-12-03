@@ -79,7 +79,7 @@ data "aws_iam_policy_document" "reprocess_failed_lambda_policy" {
   }
   statement {
     actions   = ["sqs:SendMessage"]
-    resources = [aws_sqs_queue.retry_sqs_dql.arn]
+    resources = [aws_sqs_queue.retry_notification_queue.arn]
   }
   statement {
     actions   = ["kms:GenerateDataKey", "kms:Decrypt", "kms:Encrypt"]

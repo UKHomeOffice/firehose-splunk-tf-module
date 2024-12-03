@@ -59,7 +59,8 @@ def get_records_from_s3(bucket: str, key: str, version_id: str) -> list[str]:
             # Parse the line as JSON, extract the rawData and b64 decode it
             batch = json.loads(line)
             # https://docs.aws.amazon.com/firehose/latest/dev/retry.html#dd-retry-splunk
-            record = base64.b64decode(batch["rawData"]).decode()
+            record = gzip.decompress(base64.b64decode(batch["rawData"])).decode()
+
             records.append(record)
     logging.debug(f"Downloaded {key} and extracted {records}")
     return records
@@ -156,8 +157,13 @@ def send_to_firehose(
         for log in data_to_firehose:
             # Compress the log with GZIP so we can process it the same as the
             # Cloudwatch logs when we receive it back on the transformation lambda.
-            record = {"Data": gzip.compress(json.dumps(log).encode())}
-            record_size = len(json.dumps(record).encode())
+            compressed_data = gzip.compress(json.dumps(log).encode())
+            record = {"Data": compressed_data}
+            record_size = len(
+                json.dumps(
+                    {"Data": base64.b64encode(compressed_data).decode()}
+                ).encode()
+            )
             # Check that the record/log isn't greater than the max_record_size
             # It shouldn't be as Firehose transformed it before.
             if record_size < max_record_size:

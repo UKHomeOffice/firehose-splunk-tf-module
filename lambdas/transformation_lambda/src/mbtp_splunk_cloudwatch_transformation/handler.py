@@ -126,7 +126,7 @@ def get_validated_config() -> dict:
     log_group_schema = {
         "accounts": {
             "type": "list",
-            "schema": {"type": ["string", "integer"], "coerce": str},
+            "schema": {"type": "integer"},
             "required": True,
         },
         "index": {"type": "string", "required": True},
@@ -307,9 +307,13 @@ def process_cloudwatch_log_record(
         log_group = data["logGroup"]
         log_stream = data["logStream"]
 
-        if log_group not in config["log_groups"] or str(account_id) not in config[
-            "log_groups"
-        ].get(log_group, {}).get("accounts", []):
+        if log_group not in config["log_groups"]:
+            logging.info(
+                f"Dropping as we cannot locate a log_group({log_group}) match for it."
+            )
+            return {"result": "Dropped", "recordId": rec_id}
+
+        if int(account_id) not in config["log_groups"][log_group]["accounts"]:
             logging.info(
                 f"Dropping as we cannot locate a log_group({log_group}) and account_id({account_id}) match for it."
             )
@@ -539,6 +543,8 @@ def work_out_records_to_reingest(
     for idx, rec in enumerate(records):
         original_record = event["records"][idx]
 
+        record_size = get_record_size(rec)
+
         if rec["result"] != "Ok":
             projected_return_size += record_size
             continue
@@ -549,7 +555,6 @@ def work_out_records_to_reingest(
         # ProcessingFailed, which sends it to error output.
 
         # If the record is greater than 6MB
-        record_size = get_record_size(rec)
         # We shouldn't get any processed reingested logs hitting this as they will be less than 6MB (reingestion already checked that)
         if record_size > max_return_size:
             # Reload original data
