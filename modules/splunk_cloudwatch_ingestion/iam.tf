@@ -45,7 +45,7 @@ data "aws_iam_policy_document" "kinesis_firehose_policy_document" {
       "s3:ListBucketMultipartUploads",
       "s3:PutObject",
     ]
-    resources = ["*"]
+    resources = ["${var.firehose_failures_bucket_arn}/*"]
     effect    = "Allow"
   }
 
