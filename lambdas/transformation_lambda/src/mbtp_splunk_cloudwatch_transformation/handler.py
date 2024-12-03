@@ -170,6 +170,7 @@ def get_validated_config() -> dict:
         },
     }
     v = Validator(schema)
+    v.allow_unknown = True
     if not v.validate(config_yaml):
         raise InvalidConfigException(f"Config failed to parse - {v.errors}")
 
