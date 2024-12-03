@@ -126,7 +126,7 @@ def get_validated_config() -> dict:
     log_group_schema = {
         "accounts": {
             "type": "list",
-            "schema": {"type": ["string", "integer"], "coerce": str},
+            "schema": {"type": "integer"},
             "required": True,
         },
         "index": {"type": "string", "required": True},
@@ -313,10 +313,7 @@ def process_cloudwatch_log_record(
             )
             return {"result": "Dropped", "recordId": rec_id}
 
-        logging.info(config["log_groups"][log_group]["accounts"])
-        logging.info(type(config["log_groups"][log_group]["accounts"][0]))
-        logging.info(str(account_id))
-        if str(account_id) not in config["log_groups"][log_group]["accounts"]:
+        if int(account_id) not in config["log_groups"][log_group]["accounts"]:
             logging.info(
                 f"Dropping as we cannot locate a log_group({log_group}) and account_id({account_id}) match for it."
             )

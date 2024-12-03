@@ -61,28 +61,6 @@ sourcetypes:
 log_groups:
     LOG_GROUP_NAME:
         accounts:
-            - "123456"
-            - 456789
-        index: TEST_INDEX
-        log_streams: 
-            - regex: .*
-              sourcetype: TEST_SOURCETYPE
-sourcetypes: 
-    TEST_SOURCETYPE:
-        allowlist_regexes:
-            - .*
-        denylist_regexes:
-            - .*
-        redact_regexes:
-            - .*
-""",
-        False,
-    ),
-    (
-        """
-log_groups:
-    LOG_GROUP_NAME:
-        accounts:
             - 123456
             - 456789
         index: TEST_INDEX
