@@ -66,7 +66,7 @@ data "aws_iam_policy_document" "kinesis_firehose_policy_document" {
       "lambda:InvokeFunction",
       "lambda:GetFunctionConfiguration",
     ]
-    resources = [aws_lambda_function.firehose_lambda_transform.arn]
+    resources = ["${aws_lambda_function.firehose_lambda_transform.arn}:$LATEST"]
     effect    = "Allow"
   }
 }
