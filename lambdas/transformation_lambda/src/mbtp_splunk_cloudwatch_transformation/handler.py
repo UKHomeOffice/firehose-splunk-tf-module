@@ -313,9 +313,11 @@ def process_cloudwatch_log_record(
             )
             return {"result": "Dropped", "recordId": rec_id}
 
+        logging.info(config["log_groups"][log_group]["accounts"])
+        logging.info(str(account_id))
         if str(account_id) not in config["log_groups"][log_group]["accounts"]:
             logging.info(
-                f"Dropping as we cannot locate an account_id({account_id}) match for it."
+                f"Dropping as we cannot locate a log_group({log_group}) and account_id({account_id}) match for it."
             )
             return {"result": "Dropped", "recordId": rec_id}
 
