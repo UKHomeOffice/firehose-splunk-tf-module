@@ -16,15 +16,16 @@ resource "aws_lambda_function" "firehose_lambda_transform" {
   # checkov:skip=CKV_AWS_272:Code-signing not required for this function
   # checkov:skip=CKV_AWS_115: Don't need a concurrency limit currently 
   # checkov:skip=CKV_AWS_173:Nothing sensitive in the env vars
-  function_name = "${var.environment_prefix_variable}-splunk-fh-transform"
-  description   = "Transform data from CloudWatch format to Splunk compatible format"
-  filename      = "${path.module}/../../lambdas/transformation_lambda/package/handler.zip"
-  role          = aws_iam_role.kinesis_firehose_lambda.arn
-  handler       = "handler.lambda_handler"
-  runtime       = var.python_runtime
-  timeout       = var.transform_lambda_function_timeout
-  memory_size   = var.transform_lambda_transform_memory_size
-  tags          = var.tags
+  function_name    = "${var.environment_prefix_variable}-splunk-fh-transform"
+  description      = "Transform data from CloudWatch format to Splunk compatible format"
+  filename         = "${path.module}/../../lambdas/transformation_lambda/package/handler.zip"
+  source_code_hash = base64sha256(file("${path.module}/../../lambdas/transformation_lambda/package/handler.zip"))
+  role             = aws_iam_role.kinesis_firehose_lambda.arn
+  handler          = "handler.lambda_handler"
+  runtime          = var.python_runtime
+  timeout          = var.transform_lambda_function_timeout
+  memory_size      = var.transform_lambda_transform_memory_size
+  tags             = var.tags
   environment {
     variables = {
       CONFIG_S3_BUCKET = var.firehose_failures_bucket_name
