@@ -16,18 +16,6 @@ resource "aws_sns_topic_subscription" "subscription_to_failed_splunk_sns_topic" 
   endpoint  = each.value
 }
 
-
-# S3 bucket notification to trigger SNS topic
-resource "aws_s3_bucket_notification" "s3_to_failed_events_sns_topic" {
-  bucket = var.firehose_failures_bucket_name
-
-  topic {
-    topic_arn     = aws_sns_topic.sns_topic_failed_splunk_events.arn
-    events        = ["s3:ObjectCreated:*"]
-    filter_prefix = var.s3_failed_prefix
-  }
-}
-
 # IAM policy for s3 to plublish to sns
 resource "aws_sns_topic_policy" "s3_to_sns_policy" {
   arn = aws_sns_topic.sns_topic_failed_splunk_events.arn

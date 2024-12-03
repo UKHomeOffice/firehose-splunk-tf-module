@@ -10,17 +10,6 @@ resource "aws_sqs_queue" "retry_notification_queue" {
   })
 }
 
-# Bucket notification to populate the SQS each time an object is added to the retries/ prefix of the s3 bucket.
-resource "aws_s3_bucket_notification" "bucket_notification" {
-  bucket = var.firehose_failures_bucket_name
-
-  queue {
-    queue_arn     = aws_sqs_queue.retry_notification_queue.arn
-    events        = ["s3:ObjectCreated:*"]
-    filter_prefix = var.s3_retries_prefix
-  }
-}
-
 resource "aws_sqs_queue_policy" "s3_sqs" {
   queue_url = aws_sqs_queue.retry_notification_queue.id
 
@@ -44,8 +33,7 @@ resource "aws_sqs_queue_policy" "s3_sqs" {
   })
 }
 
-
-# SQS for retry sqs deadletter queue.
+# SQS for retry sqs dead letter queue.
 resource "aws_sqs_queue" "retry_sqs_dql" {
   name                       = "${var.environment_prefix_variable}-splunk-fh-retry-dlq"
   kms_master_key_id          = aws_kms_key.firehose_key.id
