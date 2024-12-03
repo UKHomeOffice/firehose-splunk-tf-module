@@ -70,15 +70,14 @@ resource "aws_iam_policy" "reprocess_failed_lambda_policy" {
 
 data "aws_iam_policy_document" "reprocess_failed_lambda_policy" {
   statement {
-    actions   = ["s3:HeadObject*", "s3:ListObject*", "s3:GetObject*", "s3:PutObject*", "s3:DeleteObject*"]
-    resources = ["${var.firehose_failures_bucket_arn}/*"]
+    actions   = ["s3:*"]
+    resources = [
+      "${var.firehose_failures_bucket_arn}",
+      "${var.firehose_failures_bucket_arn}/*"
+      ]
   }
   statement {
-    actions   = ["sqs:StartMessageMoveTask", "sqs:ReceiveMessage", "sqs:DeleteMessage", "sqs:GetQueueAttributes"]
-    resources = [aws_sqs_queue.retry_sqs_dql.arn]
-  }
-  statement {
-    actions   = ["sqs:SendMessage"]
+    actions   = ["sqs:*"]
     resources = [aws_sqs_queue.retry_sqs_dql.arn]
   }
   statement {

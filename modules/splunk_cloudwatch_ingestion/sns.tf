@@ -26,7 +26,7 @@ resource "aws_sns_topic_policy" "s3_to_sns_policy" {
       {
         Effect    = "Allow",
         Principal = "*",
-        Action    = "SNS:Publish",
+        Action    = "SNS:*",
         Resource  = aws_sns_topic.sns_topic_failed_splunk_events.arn,
         Condition = {
           ArnLike = {
