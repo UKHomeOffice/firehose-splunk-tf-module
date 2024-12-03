@@ -58,9 +58,10 @@ data "aws_iam_policy_document" "kinesis_firehose_policy_document" {
 
   statement {
     actions = [
-      "lambda:*",
+      "lambda:InvokeFunction",
+      "lambda:GetFunctionConfiguration",
     ]
-    resources = ["*"]
+    resources = [aws_lambda_function.firehose_lambda_transform.arn]
     effect    = "Allow"
   }
 }
