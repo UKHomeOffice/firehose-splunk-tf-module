@@ -33,12 +33,13 @@ resource "aws_iam_policy" "kinesis_firehose_iam_policy" {
 data "aws_iam_policy_document" "kinesis_firehose_policy_document" {
   statement {
     actions = [
-      "s3:AbortMultipartUpload",
-      "s3:GetBucketLocation",
-      "s3:GetObject",
-      "s3:ListBucket",
-      "s3:ListBucketMultipartUploads",
-      "s3:PutObject",
+      "s3:*"
+      # "s3:AbortMultipartUpload",
+      # "s3:GetBucketLocation",
+      # "s3:GetObject",
+      # "s3:ListBucket",
+      # "s3:ListBucketMultipartUploads",
+      # "s3:PutObject",
     ]
     resources = [
       var.firehose_failures_bucket_arn,
@@ -48,7 +49,7 @@ data "aws_iam_policy_document" "kinesis_firehose_policy_document" {
   }
 
   statement {
-    actions   = ["kms:Decrypt", "kms:GenerateDataKey"]
+    actions   = ["kms:*"]
     resources = [var.s3_kms_key_arn]
     effect    = "Allow"
     condition {
@@ -64,7 +65,7 @@ data "aws_iam_policy_document" "kinesis_firehose_policy_document" {
   }
 
   statement {
-    actions = ["logs:PutLogEvents"]
+    actions = ["logs:*"]
     resources = [
       "arn:aws:logs:${var.region}:${var.account_id}:log-group:/aws/kinesisfirehose/${local.firehose_stream_name}"
     ]
@@ -73,8 +74,7 @@ data "aws_iam_policy_document" "kinesis_firehose_policy_document" {
 
   statement {
     actions = [
-      "lambda:InvokeFunction",
-      "lambda:GetFunctionConfiguration",
+      "lambda:*"
     ]
     resources = ["${aws_lambda_function.firehose_lambda_transform.arn}:$LATEST"]
     effect    = "Allow"
