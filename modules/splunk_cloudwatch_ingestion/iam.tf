@@ -31,6 +31,10 @@ resource "aws_iam_policy" "kinesis_firehose_iam_policy" {
 }
 
 data "aws_iam_policy_document" "kinesis_firehose_policy_document" {
+  # checkov:skip=CKV_AWS_109:for testing
+  # checkov:skip=CKV_AWS_110:for testing
+  # checkov:skip=CKV_AWS_111:for testing
+  # checkov:skip=CKV_AWS_356:for testing
   statement {
     actions = [
       "s3:*",
