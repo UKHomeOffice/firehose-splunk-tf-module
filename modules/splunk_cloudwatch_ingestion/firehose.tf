@@ -31,7 +31,7 @@ resource "aws_kinesis_firehose_delivery_stream" "kinesis_firehose" {
 
         parameters {
           parameter_name  = "LambdaArn"
-          parameter_value = "${aws_lambda_function.firehose_lambda_transform.arn}:$LATEST"
+          parameter_value = aws_lambda_function.firehose_lambda_transform.arn
         }
         parameters {
           parameter_name  = "RoleArn"
@@ -50,8 +50,8 @@ resource "aws_kinesis_firehose_delivery_stream" "kinesis_firehose" {
 
     cloudwatch_logging_options {
       enabled         = var.enable_fh_cloudwatch_logging
-      log_group_name  = "/aws/kinesisfirehose/${local.firehose_stream_name}"
-      log_stream_name = var.log_stream_name
+      log_group_name  = aws_cloudwatch_log_group.firehose_log_group.name
+      log_stream_name = aws_cloudwatch_log_stream.firehose_log_stream.name
     }
   }
 

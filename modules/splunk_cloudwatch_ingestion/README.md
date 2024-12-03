@@ -21,6 +21,8 @@ No modules.
 
 | Name | Type |
 |------|------|
+| [aws_cloudwatch_log_group.firehose_log_group](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/cloudwatch_log_group) | resource |
+| [aws_cloudwatch_log_stream.firehose_log_stream](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/cloudwatch_log_stream) | resource |
 | [aws_iam_policy.kinesis_firehose_iam_policy](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/iam_policy) | resource |
 | [aws_iam_policy.lambda_transform_policy](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/iam_policy) | resource |
 | [aws_iam_policy.reingestion_lambda_policy](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/iam_policy) | resource |
@@ -44,7 +46,6 @@ No modules.
 | [aws_lambda_function.firehose_lambda_retry](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/lambda_function) | resource |
 | [aws_lambda_function.firehose_lambda_transform](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/lambda_function) | resource |
 | [aws_s3_bucket_notification.bucket_notification](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/s3_bucket_notification) | resource |
-| [aws_s3_bucket_notification.s3_to_failed_events_sns_topic](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/s3_bucket_notification) | resource |
 | [aws_sns_topic.sns_topic_failed_splunk_events](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/sns_topic) | resource |
 | [aws_sns_topic_policy.s3_to_sns_policy](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/sns_topic_policy) | resource |
 | [aws_sns_topic_subscription.subscription_to_failed_splunk_sns_topic](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/sns_topic_subscription) | resource |
@@ -52,6 +53,7 @@ No modules.
 | [aws_sqs_queue.retry_sqs_dql](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/sqs_queue) | resource |
 | [aws_sqs_queue_policy.s3_sqs](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/sqs_queue_policy) | resource |
 | [null_resource.lambda_exporter](https://registry.terraform.io/providers/hashicorp/null/latest/docs/resources/resource) | resource |
+| [archive_file.lambda_compressor](https://registry.terraform.io/providers/hashicorp/archive/latest/docs/data-sources/file) | data source |
 | [archive_file.reprocess_failed_lambda_function](https://registry.terraform.io/providers/hashicorp/archive/latest/docs/data-sources/file) | data source |
 | [archive_file.retry_lambda_function](https://registry.terraform.io/providers/hashicorp/archive/latest/docs/data-sources/file) | data source |
 | [aws_iam_policy_document.kinesis_firehose_policy_document](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/data-sources/iam_policy_document) | data source |
@@ -64,6 +66,7 @@ No modules.
 | Name | Description | Type | Default | Required |
 |------|-------------|------|---------|:--------:|
 | <a name="input_account_id"></a> [account\_id](#input\_account\_id) | The aws account id where the firehose is hosted. | `any` | n/a | yes |
+| <a name="input_cloudwatch_log_retention"></a> [cloudwatch\_log\_retention](#input\_cloudwatch\_log\_retention) | Log retention for the firehose cloudwatch logs | `number` | `30` | no |
 | <a name="input_enable_fh_cloudwatch_logging"></a> [enable\_fh\_cloudwatch\_logging](#input\_enable\_fh\_cloudwatch\_logging) | Enable kinesis firehose CloudWatch logging. (It only logs errors) | `bool` | `true` | no |
 | <a name="input_environment_prefix_variable"></a> [environment\_prefix\_variable](#input\_environment\_prefix\_variable) | Envirment prefix provided by the importing module in order to ensure resources have unique names. | `any` | n/a | yes |
 | <a name="input_failed_lambda_function_timeout"></a> [failed\_lambda\_function\_timeout](#input\_failed\_lambda\_function\_timeout) | The function execution time at which Lambda should terminate the function. | `number` | `900` | no |
