@@ -139,13 +139,21 @@ variable "s3_retries_prefix" {
   description = "Prefix to store failed Firehose logs that need reingesting."
   default     = "retries/"
 }
+
 variable "s3_failed_prefix" {
   description = "Prefix to store failed Firehose logs that failed to be reingested."
   default     = "failed/"
 }
+
 variable "s3_kms_key_arn" {
   description = "KMS Key ARN used to protect the S3 bucket."
 }
+
 variable "s3_config_file_key" {
   description = "Location of the key to find the config file in S3."
+}
+
+variable "cloudwatch_log_retention" {
+  description = "Log retention for the firehose cloudwatch logs"
+  default     = 30
 }
