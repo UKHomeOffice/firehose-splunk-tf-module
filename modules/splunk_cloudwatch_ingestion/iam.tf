@@ -64,11 +64,9 @@ data "aws_iam_policy_document" "kinesis_firehose_policy_document" {
   }
 
   statement {
-    actions = ["logs:PutLogEvents"]
-    resources = [
-      "arn:aws:logs:${var.region}:${var.account_id}:log-group:/aws/kinesisfirehose/${local.firehose_stream_name}"
-    ]
-    effect = "Allow"
+    actions   = ["logs:PutLogEvents"]
+    resources = [aws_cloudwatch_log_group.firehose_log_group.arn]
+    effect    = "Allow"
   }
 
   statement {
