@@ -59,7 +59,9 @@ def get_records_from_s3(bucket: str, key: str, version_id: str) -> list[str]:
             # Parse the line as JSON, extract the rawData and b64 decode it
             batch = json.loads(line)
             # https://docs.aws.amazon.com/firehose/latest/dev/retry.html#dd-retry-splunk
-            record = base64.b64decode(batch["rawData"]).decode()
+            record = json.loads(
+                gzip.decompress(base64.b64decode(batch["rawData"])).decode()
+            )
             records.append(record)
     logging.debug(f"Downloaded {key} and extracted {records}")
     return records
