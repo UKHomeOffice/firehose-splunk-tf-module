@@ -82,17 +82,14 @@ resource "aws_iam_policy" "lambda_transform_policy" {
 
 data "aws_iam_policy_document" "lambda_policy_doc" {
   statement {
-    actions = ["firehose:*"]
+    actions = ["firehose:PutRecordBatch"]
     resources = [
       "arn:aws:firehose:${var.region}:${var.account_id}:deliverystream/${local.firehose_stream_name}"
     ]
   }
   statement {
-    actions   = ["s3:*"]
-    resources = [
-      "${var.firehose_failures_bucket_arn}",
-      "${var.firehose_failures_bucket_arn}/*"
-    ]
+    actions   = ["s3:GetObject*"]
+    resources = ["${var.firehose_failures_bucket_arn}/*"]
   }
   statement {
     actions   = ["kms:Decrypt"]

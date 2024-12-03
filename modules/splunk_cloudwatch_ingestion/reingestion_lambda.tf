@@ -73,17 +73,14 @@ resource "aws_iam_policy" "reingestion_lambda_policy" {
 
 data "aws_iam_policy_document" "reingestion_lambda_policy" {
   statement {
-    actions = ["firehose:*"]
+    actions = ["firehose:PutRecordBatch"]
     resources = [
       "arn:aws:firehose:${var.region}:${var.account_id}:deliverystream/${local.firehose_stream_name}"
     ]
   }
   statement {
-    actions   = ["s3:*"]
-    resources = [
-      "${var.firehose_failures_bucket_arn}",
-      "${var.firehose_failures_bucket_arn}/*"
-    ]
+    actions   = ["s3:HeadObject*", "s3:ListObject*", "s3:GetObject*", "s3:PutObject*", "s3:DeleteObject*"]
+    resources = ["${var.firehose_failures_bucket_arn}/*"]
   }
   statement {
     actions   = ["kms:GenerateDataKey", "kms:Decrypt", "kms:Encrypt"]
