@@ -11,7 +11,7 @@ from src.mbtp_splunk_cloudwatch_transformation.handler import (
 config = {
     "log_groups": {
         "TEST_LOG_GROUP": {
-            "accounts": ["123456789012"],
+            "accounts": [123456789012],
             "index": "TEST_INDEX",
             "log_streams": [
                 {"regex": "^TEST_LOG_STREAM$", "sourcetype": "TEST_SOURCETYPE"}
