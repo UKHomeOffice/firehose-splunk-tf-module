@@ -9,6 +9,15 @@ resource "null_resource" "lambda_exporter" {
   }
 }
 
+data "archive_file" "lambda_compressor" {
+  depends_on = [null_resource.lambda_exporter]
+  excludes   = ["__pycache__"]
+
+  source_dir  = "${path.module}/../../lambdas/transformation_lambda/package/"
+  output_path = "${path.module}/../../lambdas/transformation_lambda/package/handler.zip"
+  type        = "zip"
+}
+
 resource "aws_lambda_function" "firehose_lambda_transform" {
   # checkov:skip=CKV_AWS_116:DLQ is on the reingestion SQS.
   # checkov:skip=CKV_AWS_117:Doesn't need to be configured in a VPC as networking is not handled at this level. 
@@ -18,8 +27,8 @@ resource "aws_lambda_function" "firehose_lambda_transform" {
   # checkov:skip=CKV_AWS_173:Nothing sensitive in the env vars
   function_name    = "${var.environment_prefix_variable}-splunk-fh-transform"
   description      = "Transform data from CloudWatch format to Splunk compatible format"
-  filename         = "${path.module}/../../lambdas/transformation_lambda/package/handler.zip"
-  source_code_hash = base64sha256(file("${path.module}/../../lambdas/transformation_lambda/package/handler.zip"))
+  filename         = data.archive_file.lambda_compressor.output_path
+  source_code_hash = data.archive_file.lambda_compressor.output_base64sha256
   role             = aws_iam_role.kinesis_firehose_lambda.arn
   handler          = "handler.lambda_handler"
   runtime          = var.python_runtime
