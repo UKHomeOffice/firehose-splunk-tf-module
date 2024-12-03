@@ -16,6 +16,18 @@ resource "aws_kms_key_policy" "s3_kms_policy" {
 
 data "aws_iam_policy_document" "s3_kms_policy" {
   statement {
+    sid    = "Enable IAM User Permissions"
+    effect = "Allow"
+    actions = [
+      "kms:*",
+    ]
+    resources = [aws_kms_key.s3_kms_key.arn]
+    principals {
+      type        = "AWS"
+      identifiers = ["arn:aws:iam::${var.account_id}:root"]
+    }
+  }
+  statement {
     effect = "Deny"
     actions = [
       "kms:GenerateDataKey",
