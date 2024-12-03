@@ -33,12 +33,7 @@ resource "aws_iam_policy" "kinesis_firehose_iam_policy" {
 data "aws_iam_policy_document" "kinesis_firehose_policy_document" {
   statement {
     actions = [
-      "s3:AbortMultipartUpload",
-      "s3:GetBucketLocation",
-      "s3:GetObject",
-      "s3:ListBucket",
-      "s3:ListBucketMultipartUploads",
-      "s3:PutObject",
+      "s3:*",
     ]
     resources = [
       var.firehose_failures_bucket_arn,
@@ -48,33 +43,24 @@ data "aws_iam_policy_document" "kinesis_firehose_policy_document" {
   }
 
   statement {
-    actions   = ["kms:Decrypt", "kms:GenerateDataKey"]
+    actions   = ["kms:*"]
     resources = [var.s3_kms_key_arn]
     effect    = "Allow"
-    condition {
-      test     = "StringEquals"
-      variable = "kms:ViaService"
-      values   = ["s3.${var.region}.amazonaws.com"]
-    }
-    condition {
-      test     = "StringLike"
-      variable = "kms:EncryptionContext:aws:s3:arn"
-      values   = ["${var.firehose_failures_bucket_arn}/*"]
-    }
   }
 
   statement {
-    actions   = ["logs:PutLogEvents"]
-    resources = [aws_cloudwatch_log_group.firehose_log_group.arn]
-    effect    = "Allow"
+    actions = ["logs:*"]
+    resources = [
+      "*"
+    ]
+    effect = "Allow"
   }
 
   statement {
     actions = [
-      "lambda:InvokeFunction",
-      "lambda:GetFunctionConfiguration",
+      "lambda:*",
     ]
-    resources = [aws_lambda_function.firehose_lambda_transform.arn]
+    resources = ["*"]
     effect    = "Allow"
   }
 }
