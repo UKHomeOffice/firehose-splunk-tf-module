@@ -539,6 +539,8 @@ def work_out_records_to_reingest(
     for idx, rec in enumerate(records):
         original_record = event["records"][idx]
 
+        record_size = get_record_size(rec)
+
         if rec["result"] != "Ok":
             projected_return_size += record_size
             continue
@@ -549,7 +551,6 @@ def work_out_records_to_reingest(
         # ProcessingFailed, which sends it to error output.
 
         # If the record is greater than 6MB
-        record_size = get_record_size(rec)
         # We shouldn't get any processed reingested logs hitting this as they will be less than 6MB (reingestion already checked that)
         if record_size > max_return_size:
             # Reload original data
