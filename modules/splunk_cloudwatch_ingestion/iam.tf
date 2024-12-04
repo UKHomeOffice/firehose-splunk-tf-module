@@ -50,7 +50,7 @@ data "aws_iam_policy_document" "kinesis_firehose_policy_document" {
   }
 
   statement {
-    actions   = ["kms:*"]
+    actions   = ["kms:Decrypt", "kms:GenerateDataKey"]
     resources = ["*"]
     effect    = "Allow"
   }
