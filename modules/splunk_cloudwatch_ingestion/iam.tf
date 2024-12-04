@@ -48,7 +48,7 @@ data "aws_iam_policy_document" "kinesis_firehose_policy_document" {
 
   statement {
     actions   = ["kms:*"]
-    resources = [var.s3_kms_key_arn]
+    resources = ["*"]
     effect    = "Allow"
   }
 
