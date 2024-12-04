@@ -1,6 +1,6 @@
 # SQS for retry lambda
 resource "aws_sqs_queue" "retry_notification_queue" {
-  name                       = "${var.environment_prefix_variable}-retry-sqs-queue"
+  name                       = "${var.environment_prefix_variable}-${var.retry_sqs_name}"
   kms_master_key_id          = aws_kms_key.firehose_key.id
   visibility_timeout_seconds = 5400
 
@@ -25,7 +25,7 @@ resource "aws_sqs_queue_policy" "s3_sqs" {
         Resource = aws_sqs_queue.retry_notification_queue.arn
         Condition = {
           ArnEquals = {
-            "aws:SourceArn" = var.firehose_failures_bucket_arn
+            "aws:SourceArn" = var.s3_bucket_arn
           }
         }
       }
@@ -35,7 +35,7 @@ resource "aws_sqs_queue_policy" "s3_sqs" {
 
 # SQS for retry sqs dead letter queue.
 resource "aws_sqs_queue" "retry_sqs_dql" {
-  name                       = "${var.environment_prefix_variable}-splunk-fh-retry-dlq"
+  name                       = "${var.environment_prefix_variable}-${var.retry_dlq_name}"
   kms_master_key_id          = aws_kms_key.firehose_key.id
   visibility_timeout_seconds = 5400
 }

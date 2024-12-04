@@ -1,3 +1,3 @@
 locals {
-  firehose_stream_name = "${var.environment_prefix_variable}-firehose-cloudwatch-to-splunk"
+  firehose_stream_name = "${var.environment_prefix_variable}-fh-cw2splunk"
 }
