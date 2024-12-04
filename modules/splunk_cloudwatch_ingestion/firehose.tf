@@ -9,7 +9,7 @@ resource "aws_kinesis_firehose_delivery_stream" "kinesis_firehose" {
     hec_endpoint               = var.hec_url
     hec_token                  = var.hec_token
     hec_acknowledgment_timeout = var.hec_acknowledgment_timeout
-    hec_endpoint_type          = var.hec_endpoint_type
+    hec_endpoint_type          = "Event"
     s3_backup_mode             = "FailedEventsOnly"
     retry_duration             = var.firehose_retry_duration
 
