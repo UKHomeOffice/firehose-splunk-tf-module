@@ -17,7 +17,7 @@ data "archive_file" "transformation_lambda_compressor" {
   type        = "zip"
 }
 
-resource "aws_lambda_function" "firehose_lambda_transformationation" {
+resource "aws_lambda_function" "firehose_lambda_transformation" {
   # checkov:skip=CKV_AWS_116:DLQ is on the reingestion SQS.
   # checkov:skip=CKV_AWS_117:Doesn't need to be configured in a VPC as networking is not handled at this level. 
   # checkov:skip=CKV_AWS_50:X-Ray tracing not required for this function
