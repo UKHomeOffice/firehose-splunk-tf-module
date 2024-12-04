@@ -14,7 +14,7 @@ resource "aws_lambda_function" "firehose_lambda_reprocess_failed" {
   function_name    = "${var.environment_prefix_variable}-splunk-fh-reprocess-failed"
   description      = "Manually triggered to move objects from /failed to /retries"
   filename         = data.archive_file.reprocess_failed_lambda_function.output_path
-  role             = aws_iam_role.kinesis_firehose_lambda.arn
+  role             = aws_iam_role.reprocess_failed_lambda.arn
   handler          = "handler.lambda_handler"
   source_code_hash = data.archive_file.retry_lambda_function.output_base64sha256
   runtime          = var.python_runtime
@@ -23,7 +23,6 @@ resource "aws_lambda_function" "firehose_lambda_reprocess_failed" {
   tags             = var.tags
   environment {
     variables = {
-      MAX_RETRIES    = 20
       S3_BUCKET_NAME = var.firehose_failures_bucket_name
       SQS_QUEUE_ARN  = aws_sqs_queue.retry_notification_queue.arn
       DLQ_QUEUE_ARN  = aws_sqs_queue.retry_sqs_dql.arn

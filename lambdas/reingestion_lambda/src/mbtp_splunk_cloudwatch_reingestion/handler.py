@@ -103,7 +103,9 @@ def add_log_to_output_list(
         logging.info(f"Greater than MAX_RETRIES, sending to S3 - {log}")
         data_to_s3.append(log)
     else:
-        logging.debug(f"Less than MAX_RETRIES, sending to Firehose - {log}")
+        logging.info(
+            f"{log["fields"]["firehose_errors"]} is <= MAX_RETRIES, sending to Firehose - {log}"
+        )
         data_to_firehose.append(log)
 
 
