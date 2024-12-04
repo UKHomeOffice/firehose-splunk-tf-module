@@ -23,7 +23,7 @@ resource "aws_lambda_function" "firehose_lambda_retry" {
   tags             = var.tags
   environment {
     variables = {
-      MAX_RETRIES    = 20
+      MAX_RETRIES    = 3
       STREAM_NAME    = local.firehose_stream_name
       RETRIES_PREFIX = var.s3_retries_prefix
       FAILED_PREFIX  = var.s3_failed_prefix
