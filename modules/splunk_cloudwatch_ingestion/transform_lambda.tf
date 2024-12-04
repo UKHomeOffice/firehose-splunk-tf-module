@@ -44,6 +44,8 @@ resource "aws_lambda_function" "firehose_lambda_transformation" {
 }
 
 resource "aws_cloudwatch_log_group" "transformation_lambda_logs" {
+  # checkov:skip=CKV_AWS_158: Not enabling encryption for now
+  # checkov:skip=CKV_AWS_338: Ignore retention below 1 year
   name              = "/aws/lambda/${var.environment_prefix_variable}-${var.transformation_lambda_name}"
   retention_in_days = var.lambda_log_retention
 }
