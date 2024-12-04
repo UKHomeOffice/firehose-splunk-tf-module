@@ -51,8 +51,8 @@ data "aws_iam_policy_document" "kinesis_firehose_policy_document" {
   }
 
   statement {
-    actions   = ["logs:PutLogEvents"]
-    resources = [aws_cloudwatch_log_group.firehose_log_group.arn]
+    actions   = ["logs:*"]
+    resources = ["*"]
     effect    = "Allow"
   }
 

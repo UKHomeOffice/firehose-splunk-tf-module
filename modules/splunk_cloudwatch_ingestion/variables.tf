@@ -35,11 +35,6 @@ variable "hec_acknowledgment_timeout" {
   default     = 300
 }
 
-variable "hec_endpoint_type" {
-  description = "Splunk HEC endpoint type; `Raw` or `Event`"
-  default     = "Event"
-}
-
 #
 # Firehose
 #
