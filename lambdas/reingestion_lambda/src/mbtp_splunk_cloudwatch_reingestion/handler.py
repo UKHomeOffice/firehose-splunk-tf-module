@@ -7,6 +7,7 @@ import logging
 from os import environ
 
 import boto3
+import botocore
 
 logger = logging.getLogger()
 logger.setLevel(environ.get("LOG_LEVEL", "INFO"))
@@ -255,6 +256,27 @@ def push_to_firehose(
                 data_to_s3.append(json.loads(gzip.decompress(failed_record["Data"])))
 
 
+def does_file_exist(bucket: str, key: str, version_id: str) -> bool:
+    """Checks if a file exists in S3
+
+    Args:
+        bucket (str): S3 Bucket to check.
+        key (str): Key within the bucket to check.
+        version_id (str): Version ID to check.
+
+    Returns:
+        bool: True if exists
+    """
+    try:
+        s3_client.head_object(Bucket=bucket, Key=key, VersionId=version_id)
+        return True
+    except botocore.exceptions.ClientError as e:
+        if str(e.response["Error"]["Code"]) in ["403", "404"]:
+            return False
+        else:
+            raise
+
+
 def lambda_handler(event: dict, _context: dict):
     """Lambda Handler to download logs from S3 and retry sending them to Firehose.
 
@@ -273,6 +295,9 @@ def lambda_handler(event: dict, _context: dict):
             bucket = s3_record["s3"]["bucket"]["name"]
             key = s3_record["s3"]["object"]["key"]
             version_id = s3_record["s3"]["object"]["versionId"]
+
+            if not does_file_exist(bucket, key, version_id):
+                continue
 
             # Get the logs from the file and assign them to firehose or S3
             records = get_records_from_s3(bucket, key, version_id)

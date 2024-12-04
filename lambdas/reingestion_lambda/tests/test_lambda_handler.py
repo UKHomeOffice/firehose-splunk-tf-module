@@ -283,6 +283,15 @@ def test_handler(mocker):
     firehose_stubber = Stubber(mocked_firehose_client)
 
     s3_stubber.add_response(
+        "head_object",
+        {},
+        {
+            "Bucket": "TEST_BUCKET",
+            "Key": "retries/TEST_KEY",
+            "VersionId": "TEST_VERSION_ID",
+        },
+    )
+    s3_stubber.add_response(
         "get_object",
         {"Body": StreamingBody(io.BytesIO(encoded_message), len(encoded_message))},
         {
