@@ -16,7 +16,7 @@ resource "aws_lambda_function" "firehose_lambda_process_failures" {
   filename         = data.archive_file.process_failures_lambda_function.output_path
   role             = aws_iam_role.process_failures_lambda.arn
   handler          = "handler.lambda_handler"
-  source_code_hash = data.archive_file.retry_lambda_function.output_base64sha256
+  source_code_hash = data.archive_file.process_failures_lambda_function.output_base64sha256
   runtime          = var.python_runtime
   timeout          = var.process_failures_lambda_timeout
   memory_size      = var.process_failures_lambda_memory_size

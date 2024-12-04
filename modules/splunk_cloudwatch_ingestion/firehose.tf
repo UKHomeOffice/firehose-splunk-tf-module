@@ -11,7 +11,7 @@ resource "aws_kinesis_firehose_delivery_stream" "kinesis_firehose" {
     hec_acknowledgment_timeout = var.hec_acknowledgment_timeout
     hec_endpoint_type          = var.hec_endpoint_type
     s3_backup_mode             = "FailedEventsOnly"
-    firehose_retry_duration    = var.firehose_retry_duration
+    retry_duration             = var.firehose_retry_duration
 
     s3_configuration {
       role_arn           = aws_iam_role.kinesis_firehose_role.arn
