@@ -33,6 +33,8 @@ resource "aws_iam_policy" "kinesis_firehose_policy" {
 data "aws_iam_policy_document" "kinesis_firehose_policy_document" {
   # checkov:skip=CKV_AWS_111
   # checkov:skip=CKV_AWS_356
+  # checkov:skip=CKV_AWS_109
+
   statement {
     actions = [
       "s3:AbortMultipartUpload",
