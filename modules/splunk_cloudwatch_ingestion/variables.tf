@@ -22,7 +22,7 @@ variable "tags" {
 #
 # Splunk 
 #
-variable "splunk_hec_token" {
+variable "hec_token" {
   description = "splunk hec token for the index which logs should be forwarded to."
 }
 
