@@ -39,7 +39,7 @@ resource "aws_cloudwatch_log_group" "reingestion_lambda_logs" {
 
 resource "aws_lambda_event_source_mapping" "reingestion_lambda_trigger" {
   event_source_arn = aws_sqs_queue.retry_notification_queue.arn
-  function_name    = aws_lambda_function.firehose_lambda_retry.arn
+  function_name    = aws_lambda_function.firehose_lambda_reingestion.arn
 }
 
 resource "aws_iam_role" "reingestion_lambda" {

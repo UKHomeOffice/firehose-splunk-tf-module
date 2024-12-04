@@ -48,7 +48,7 @@ No modules.
 | [aws_lambda_event_source_mapping.reingestion_lambda_trigger](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/lambda_event_source_mapping)    | resource    |
 | [aws_lambda_function.firehose_lambda_process_failures](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/lambda_function)                      | resource    |
 | [aws_lambda_function.firehose_lambda_reingestion](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/lambda_function)                           | resource    |
-| [aws_lambda_function.firehose_lambda_transformation](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/lambda_function)                        | resource    |
+| [aws_lambda_function.firehose_lambda_transformationation](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/lambda_function)                   | resource    |
 | [aws_policy.kinesis_firehose_policy](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/policy)                                                 | resource    |
 | [aws_s3_bucket_notification.bucket_notification](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/s3_bucket_notification)                     | resource    |
 | [aws_sns_topic.sns_topic_alerts](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/sns_topic)                                                  | resource    |

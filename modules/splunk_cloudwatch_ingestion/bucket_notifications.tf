@@ -4,7 +4,7 @@ resource "aws_s3_bucket_notification" "bucket_notification" {
   bucket = var.s3_bucket_name
 
   topic {
-    topic_arn     = aws_sns_topic.sns_topic_failed_splunk_events.arn
+    topic_arn     = aws_sns_topic.sns_topic_alerts.arn
     events        = ["s3:ObjectCreated:*"]
     filter_prefix = var.s3_failed_prefix
   }
