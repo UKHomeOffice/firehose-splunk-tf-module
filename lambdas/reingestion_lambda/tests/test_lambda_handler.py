@@ -8,6 +8,7 @@ from os import environ
 from unittest import mock
 
 import boto3
+import botocore
 import pytest
 from botocore.response import StreamingBody
 from botocore.stub import Stubber
@@ -19,6 +20,7 @@ from src.mbtp_splunk_cloudwatch_reingestion.handler import (
     get_records_from_s3,
     send_to_firehose,
     send_to_s3,
+    does_file_exist,
 )
 
 REGION = environ["AWS_REGION"]
@@ -251,6 +253,53 @@ def test_push_to_firehose_errored(mocker):
     assert data_to_s3 == data_to_firehose
 
 
+def test_does_file_exist_exists(mocker):
+    mocked_s3_client = boto3.client("s3", region_name=environ["AWS_REGION"])
+    s3_stubber = Stubber(mocked_s3_client)
+    s3_stubber.add_response(
+        "head_object",
+        {},
+        {
+            "Bucket": "TEST_BUCKET",
+            "Key": "retries/TEST_KEY",
+            "VersionId": "TEST_VERSION_ID",
+        },
+    )
+    s3_stubber.activate()
+    mocker.patch(
+        "src.mbtp_splunk_cloudwatch_reingestion.handler.s3_client",
+        new=mocked_s3_client,
+    )
+    assert does_file_exist("TEST_BUCKET", "retries/TEST_KEY", "TEST_VERSION_ID") == True
+
+
+def test_does_file_exist_not_exists(mocker):
+    mocked_s3_client = boto3.client("s3", region_name=environ["AWS_REGION"])
+    s3_stubber = Stubber(mocked_s3_client)
+    s3_stubber.add_client_error("head_object", "404", http_status_code=404)
+    s3_stubber.activate()
+    mocker.patch(
+        "src.mbtp_splunk_cloudwatch_reingestion.handler.s3_client",
+        new=mocked_s3_client,
+    )
+    assert (
+        does_file_exist("TEST_BUCKET", "retries/TEST_KEY", "TEST_VERSION_ID") == False
+    )
+
+
+def test_does_file_exist_error(mocker):
+    mocked_s3_client = boto3.client("s3", region_name=environ["AWS_REGION"])
+    s3_stubber = Stubber(mocked_s3_client)
+    s3_stubber.add_client_error("head_object", "500", http_status_code=500)
+    s3_stubber.activate()
+    mocker.patch(
+        "src.mbtp_splunk_cloudwatch_reingestion.handler.s3_client",
+        new=mocked_s3_client,
+    )
+    with pytest.raises(botocore.exceptions.ClientError):
+        does_file_exist("TEST_BUCKET", "retries/TEST_KEY", "TEST_VERSION_ID")
+
+
 def test_handler(mocker):
     """Test to check that handler functions without error and calls the correct AWS APIs"""
 
@@ -268,7 +317,16 @@ def test_handler(mocker):
                                         "versionId": "TEST_VERSION_ID",
                                     },
                                 }
-                            }
+                            },
+                            {
+                                "s3": {
+                                    "bucket": {"name": "TEST_BUCKET"},
+                                    "object": {
+                                        "key": "retries/NOT_EXIST",
+                                        "versionId": "NOT_EXIST",
+                                    },
+                                }
+                            },
                         ]
                     }
                 )
@@ -318,6 +376,8 @@ def test_handler(mocker):
             "VersionId": "TEST_VERSION_ID",
         },
     )
+    s3_stubber.add_client_error("head_object", "404", http_status_code=404)
+
     s3_stubber.activate()
 
     firehose_stubber.add_response(
