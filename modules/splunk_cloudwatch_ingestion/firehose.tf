@@ -10,15 +10,15 @@ resource "aws_kinesis_firehose_delivery_stream" "kinesis_firehose" {
     hec_token                  = var.splunk_hec_token
     hec_acknowledgment_timeout = var.hec_acknowledgment_timeout
     hec_endpoint_type          = var.hec_endpoint_type
-    s3_backup_mode             = var.s3_backup_mode
-    retry_duration             = var.retry_duration
+    s3_backup_mode             = "FailedEventsOnly"
+    firehose_retry_duration    = var.firehose_retry_duration
 
     s3_configuration {
       role_arn           = aws_iam_role.kinesis_firehose_role.arn
       prefix             = var.s3_retries_prefix
-      bucket_arn         = var.firehose_failures_bucket_arn
-      buffering_size     = var.kinesis_firehose_buffer
-      buffering_interval = var.kinesis_firehose_buffer_interval
+      bucket_arn         = var.s3_bucket_arn
+      buffering_size     = var.firehose_buffer
+      buffering_interval = var.firehose_buffer_interval
       kms_key_arn        = aws_kms_key.firehose_key.arn
       compression_format = "UNCOMPRESSED"
     }
@@ -39,21 +39,34 @@ resource "aws_kinesis_firehose_delivery_stream" "kinesis_firehose" {
         }
         parameters {
           parameter_name  = "BufferSizeInMBs"
-          parameter_value = var.kinesis_firehose_transform_buffer
+          parameter_value = var.firehose_transform_buffer
         }
         parameters {
           parameter_name  = "BufferIntervalInSeconds"
-          parameter_value = var.kinesis_firehose_transform_buffer_interval
+          parameter_value = var.firehose_transform_buffer_interval
         }
       }
     }
 
     cloudwatch_logging_options {
-      enabled         = var.enable_fh_cloudwatch_logging
+      enabled         = true
       log_group_name  = aws_cloudwatch_log_group.firehose_log_group.name
       log_stream_name = aws_cloudwatch_log_stream.firehose_log_stream.name
     }
   }
 
   tags = var.tags
+}
+
+resource "aws_cloudwatch_log_group" "firehose_log_group" {
+  # checkov:skip=CKV_AWS_158: Not enabling encryption for now
+  # checkov:skip=CKV_AWS_338: Ignore retention below 1 year
+  name              = "/aws/kinesisfirehose/${var.environment_prefix_variable}-${var.firehose_log_group_name}"
+  retention_in_days = var.firehose_log_retention
+  tags              = var.tags
+}
+
+resource "aws_cloudwatch_log_stream" "firehose_log_stream" {
+  name           = var.firehose_log_stream_name
+  log_group_name = aws_cloudwatch_log_group.firehose_log_group.name
 }

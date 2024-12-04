@@ -1,17 +1,15 @@
-resource "null_resource" "lambda_exporter" {
+resource "null_resource" "transformation_lambda_exporter" {
   provisioner "local-exec" {
     working_dir = "${path.module}/../../lambdas/transformation_lambda"
     command     = "bash package.sh"
   }
   triggers = {
-    # code         = "${base64sha256(file("${path.module}/../../lambdas/transformation_lambda/src/mbtp_splunk_cloudwatch_transformation/handler.py"))}"
-    # requirements = "${base64sha256(file("${path.module}/../../lambdas/transformation_lambda/requirements.txt")S)}"
     trigger = timestamp()
   }
 }
 
-data "archive_file" "lambda_compressor" {
-  depends_on = [null_resource.lambda_exporter]
+data "archive_file" "transformation_lambda_compressor" {
+  depends_on = [null_resource.transformation_lambda_exporter]
   excludes   = ["__pycache__"]
 
   source_dir  = "${path.module}/../../lambdas/transformation_lambda/package/"
@@ -19,34 +17,39 @@ data "archive_file" "lambda_compressor" {
   type        = "zip"
 }
 
-resource "aws_lambda_function" "firehose_lambda_transform" {
+resource "aws_lambda_function" "firehose_lambda_transformation" {
   # checkov:skip=CKV_AWS_116:DLQ is on the reingestion SQS.
   # checkov:skip=CKV_AWS_117:Doesn't need to be configured in a VPC as networking is not handled at this level. 
   # checkov:skip=CKV_AWS_50:X-Ray tracing not required for this function
   # checkov:skip=CKV_AWS_272:Code-signing not required for this function
   # checkov:skip=CKV_AWS_115: Don't need a concurrency limit currently 
   # checkov:skip=CKV_AWS_173:Nothing sensitive in the env vars
-  function_name    = "${var.environment_prefix_variable}-splunk-fh-transform"
+  function_name    = "${var.environment_prefix_variable}-${var.transformation_lambda_name}"
   description      = "Transform data from CloudWatch format to Splunk compatible format"
-  filename         = data.archive_file.lambda_compressor.output_path
-  source_code_hash = data.archive_file.lambda_compressor.output_base64sha256
+  filename         = data.archive_file.transformation_lambda_compressor.output_path
+  source_code_hash = data.archive_file.transformation_lambda_compressor.output_base64sha256
   role             = aws_iam_role.kinesis_firehose_lambda.arn
   handler          = "handler.lambda_handler"
   runtime          = var.python_runtime
-  timeout          = var.transform_lambda_function_timeout
-  memory_size      = var.transform_lambda_transform_memory_size
+  timeout          = var.transformation_lambda_timeout
+  memory_size      = var.transformation_lambda_memory_size
   tags             = var.tags
   environment {
     variables = {
-      CONFIG_S3_BUCKET = var.firehose_failures_bucket_name
+      CONFIG_S3_BUCKET = var.s3_bucket_name
       CONFIG_S3_KEY    = var.s3_config_file_key
     }
   }
-  depends_on = [null_resource.lambda_exporter]
+  depends_on = [null_resource.transformation_lambda_exporter, aws_cloudwatch_log_group.transformation_lambda_logs]
+}
+
+resource "aws_cloudwatch_log_group" "transformation_lambda_logs" {
+  name              = "/aws/lambda/${var.environment_prefix_variable}-${var.transformation_lambda_name}"
+  retention_in_days = var.lambda_log_retention
 }
 
 resource "aws_iam_role" "kinesis_firehose_lambda" {
-  name        = "${var.environment_prefix_variable}-splunk-fh-transform"
+  name        = "${var.environment_prefix_variable}-${var.transformation_lambda_name}"
   description = "Role for Lambda function to transformation CloudWatch logs into Splunk compatible format"
 
   assume_role_policy = jsonencode({
@@ -72,11 +75,11 @@ resource "aws_iam_role_policy_attachment" "kinesis_firehose_lambda_default" {
 
 resource "aws_iam_role_policy_attachment" "lambda_policy_role_attachment" {
   role       = aws_iam_role.kinesis_firehose_lambda.name
-  policy_arn = aws_iam_policy.lambda_transform_policy.arn
+  policy_arn = aws_iam_policy.lambda_transformation_policy.arn
 }
 
-resource "aws_iam_policy" "lambda_transform_policy" {
-  name   = "${var.environment_prefix_variable}-splunk-fh-transform"
+resource "aws_iam_policy" "lambda_transformation_policy" {
+  name   = "${var.environment_prefix_variable}-${var.transformation_lambda_name}"
   policy = data.aws_iam_policy_document.lambda_policy_doc.json
 }
 
@@ -89,7 +92,7 @@ data "aws_iam_policy_document" "lambda_policy_doc" {
   }
   statement {
     actions   = ["s3:GetObject*"]
-    resources = ["${var.firehose_failures_bucket_arn}/*"]
+    resources = ["${var.s3_bucket_arn}/*"]
   }
   statement {
     actions   = ["kms:Decrypt"]

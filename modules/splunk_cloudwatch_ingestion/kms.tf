@@ -1,8 +1,12 @@
 resource "aws_kms_key" "firehose_key" {
-  # checkov:skip=CKV2_AWS_64:Key policy to be introduced later
   description             = "KMS key for Kinesis Firehose S3 backup encryption"
   deletion_window_in_days = 10
   enable_key_rotation     = true
+}
+
+resource "aws_kms_alias" "firehose_key_alias" {
+  name          = "alias/${var.environment_prefix_variable}-${var.kms_key_name}"
+  target_key_id = aws_kms_key.firehose_key.key_id
 }
 
 resource "aws_kms_key_policy" "firehose_key_policy" {
@@ -32,7 +36,7 @@ resource "aws_kms_key_policy" "firehose_key_policy" {
         Resource = "*",
         Condition = {
           StringEquals = {
-            "aws:SourceArn" = "arn:aws:s3:::${var.firehose_failures_bucket_name}"
+            "aws:SourceArn" = var.s3_bucket_arn
           }
         }
       },

@@ -1,7 +1,7 @@
 # Kinesis Firehose Policy
 
 resource "aws_iam_role" "kinesis_firehose_role" {
-  name        = "${var.environment_prefix_variable}-${var.kinesis_firehose_role_name}"
+  name        = "${var.environment_prefix_variable}-${var.firehose_role_name}"
   description = "Role for kinesis firehose"
 
   assume_role_policy = jsonencode({
@@ -22,12 +22,12 @@ resource "aws_iam_role" "kinesis_firehose_role" {
 
 resource "aws_iam_role_policy_attachment" "kinesis_fh_role_attachment" {
   role       = aws_iam_role.kinesis_firehose_role.name
-  policy_arn = aws_iam_policy.kinesis_firehose_iam_policy.arn
+  policy_arn = aws_policy.kinesis_firehose_policy.arn
 }
 
-resource "aws_iam_policy" "kinesis_firehose_iam_policy" {
-  name   = "${var.environment_prefix_variable}_${var.kinesis_firehose_iam_policy_name}"
-  policy = data.aws_iam_policy_document.kinesis_firehose_policy_document.json
+resource "aws_policy" "kinesis_firehose_policy" {
+  name   = "${var.environment_prefix_variable}-${var.firehose_role_name}"
+  policy = data.aws_policy_document.kinesis_firehose_policy_document.json
 }
 
 data "aws_iam_policy_document" "kinesis_firehose_policy_document" {

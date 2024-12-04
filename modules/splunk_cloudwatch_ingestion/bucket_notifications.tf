@@ -1,7 +1,7 @@
 # Bucket notification to populate the SQS each time an object is added to the retries/ prefix of the s3 bucket.
 # S3 bucket notification to trigger SNS topic
 resource "aws_s3_bucket_notification" "bucket_notification" {
-  bucket = var.firehose_failures_bucket_name
+  bucket = var.s3_bucket_name
 
   topic {
     topic_arn     = aws_sns_topic.sns_topic_failed_splunk_events.arn

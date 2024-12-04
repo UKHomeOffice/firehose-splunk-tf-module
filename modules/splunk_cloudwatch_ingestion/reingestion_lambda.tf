@@ -1,25 +1,25 @@
-data "archive_file" "retry_lambda_function" {
+data "archive_file" "reingestion_lambda_function" {
   type        = "zip"
   source_dir  = "${path.module}/../../lambdas/reingestion_lambda/src/mbtp_splunk_cloudwatch_reingestion/"
   output_path = "${path.module}/../../lambdas/reingestion_lambda/src/mbtp_splunk_cloudwatch_reingestion/handler.zip"
 }
 
-resource "aws_lambda_function" "firehose_lambda_retry" {
+resource "aws_lambda_function" "firehose_lambda_reingestion" {
   # checkov:skip=CKV_AWS_116:DLQ is on the reingestion SQS.
   # checkov:skip=CKV_AWS_117:Doesn't need to be configured in a VPC as networking is not handled at this level. 
   # checkov:skip=CKV_AWS_50:X-Ray tracing not required for this function
   # checkov:skip=CKV_AWS_272:Code-signing not required for this function
   # checkov:skip=CKV_AWS_115: Don't need a concurrency limit currently 
   # checkov:skip=CKV_AWS_173:Nothing sensitive in the env vars
-  function_name    = "${var.environment_prefix_variable}-splunk-fh-retry"
+  function_name    = "${var.environment_prefix_variable}-${var.reingestion_lambda_name}"
   description      = "Reingest logs from the retries prefix of the s3 bucket back into firehose"
-  filename         = data.archive_file.retry_lambda_function.output_path
+  filename         = data.archive_file.reingestion_lambda_function.output_path
   role             = aws_iam_role.reingestion_lambda.arn
   handler          = "handler.lambda_handler"
-  source_code_hash = data.archive_file.retry_lambda_function.output_base64sha256
+  source_code_hash = data.archive_file.reingestion_lambda_function.output_base64sha256
   runtime          = var.python_runtime
-  timeout          = var.retry_lambda_function_timeout
-  memory_size      = var.retry_lambda_transform_memory_size
+  timeout          = var.reingestion_lambda_timeout
+  memory_size      = var.reingestion_lambda_memory_size
   tags             = var.tags
   environment {
     variables = {
@@ -29,15 +29,21 @@ resource "aws_lambda_function" "firehose_lambda_retry" {
       FAILED_PREFIX  = var.s3_failed_prefix
     }
   }
+  depends_on = [aws_cloudwatch_log_group.reingestion_lambda_logs]
 }
 
-resource "aws_lambda_event_source_mapping" "retry_lambda_trigger" {
+resource "aws_cloudwatch_log_group" "reingestion_lambda_logs" {
+  name              = "/aws/lambda/${var.environment_prefix_variable}-${var.reingestion_lambda_name}"
+  retention_in_days = var.lambda_log_retention
+}
+
+resource "aws_lambda_event_source_mapping" "reingestion_lambda_trigger" {
   event_source_arn = aws_sqs_queue.retry_notification_queue.arn
   function_name    = aws_lambda_function.firehose_lambda_retry.arn
 }
 
 resource "aws_iam_role" "reingestion_lambda" {
-  name        = "${var.environment_prefix_variable}-splunk-fh-retry"
+  name        = "${var.environment_prefix_variable}-${var.reingestion_lambda_name}"
   description = "Role for Lambda function to try reingest logs into Firehose when they fail."
 
   assume_role_policy = jsonencode({
@@ -67,7 +73,7 @@ resource "aws_iam_role_policy_attachment" "reingestion_lambda" {
 }
 
 resource "aws_iam_policy" "reingestion_lambda_policy" {
-  name   = "${var.environment_prefix_variable}-splunk-fh-retry"
+  name   = "${var.environment_prefix_variable}-${var.reingestion_lambda_name}"
   policy = data.aws_iam_policy_document.reingestion_lambda_policy.json
 }
 
@@ -80,7 +86,7 @@ data "aws_iam_policy_document" "reingestion_lambda_policy" {
   }
   statement {
     actions   = ["s3:HeadObject*", "s3:ListObject*", "s3:GetObject*", "s3:PutObject*", "s3:DeleteObject*"]
-    resources = ["${var.firehose_failures_bucket_arn}/*"]
+    resources = ["${var.s3_bucket_arn}/*"]
   }
   statement {
     actions   = ["kms:GenerateDataKey", "kms:Decrypt", "kms:Encrypt"]
