@@ -51,7 +51,7 @@ data "aws_iam_policy_document" "kinesis_firehose_policy_document" {
 
   statement {
     actions   = ["kms:Decrypt", "kms:GenerateDataKey"]
-    resources = ["*"]
+    resources = [var.s3_kms_key_arn]
     effect    = "Allow"
   }
 
