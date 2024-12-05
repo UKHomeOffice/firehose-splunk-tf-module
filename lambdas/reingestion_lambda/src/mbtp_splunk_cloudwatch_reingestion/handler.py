@@ -102,12 +102,12 @@ def add_log_to_output_list(
     # Increase the error count, check if it's greater than MAX_RETRIES
     # and add it to the appropriate list.
     log["fields"]["firehose_errors"] = log["fields"].get("firehose_errors", 0) + 1
-    if log["fields"]["firehose_errors"] > MAX_RETRIES:
+    if log["fields"]["firehose_errors"] >= MAX_RETRIES:
         logging.info(f"Greater than MAX_RETRIES, sending to S3 - {log}")
         data_to_s3.append(log)
     else:
         logging.info(
-            f"{log["fields"]["firehose_errors"]} is <= MAX_RETRIES, sending to Firehose - {log}"
+            f"{log["fields"]["firehose_errors"]} is less than MAX_RETRIES, sending to Firehose - {log}"
         )
         data_to_firehose.append(log)
 
@@ -129,7 +129,11 @@ def send_to_s3(data_to_s3: list[dict], bucket: str, key: str):
             # Place the log back in S3 in the same format it we received it from Firehose in.
             s3_lines.append(
                 json.dumps(
-                    {"rawData": base64.b64encode(json.dumps(log).encode()).decode()}
+                    {
+                        "rawData": base64.b64encode(
+                            gzip.compress(json.dumps(log).encode())
+                        ).decode()
+                    }
                 )
             )
         s3_client.put_object(Bucket=bucket, Key=key, Body="\n".join(s3_lines).encode())
