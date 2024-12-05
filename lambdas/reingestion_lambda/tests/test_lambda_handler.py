@@ -32,13 +32,14 @@ test_json_events = [
     '{"foo2": "bar2"}',
     '{"foo3": "bar3", "fields": {"firehose_errors": 3}}',
 ]
-encoded_message = "\n".join(
-    json.dumps({"rawData": base64.b64encode(gzip.compress(x.encode())).decode()})
-    for x in test_json_events
-).encode()
 
 
-def test_get_records_from_s3(mocker):
+def test_get_records_from_s3_splunk_failed(mocker):
+    encoded_message = "\n".join(
+        json.dumps({"rawData": base64.b64encode(gzip.compress(x.encode())).decode()})
+        for x in test_json_events
+    ).encode()
+
     mocked_s3_client = boto3.client("s3", region_name=environ["AWS_REGION"])
     s3_stubber = Stubber(mocked_s3_client)
 
@@ -47,7 +48,7 @@ def test_get_records_from_s3(mocker):
         {"Body": StreamingBody(io.BytesIO(encoded_message), len(encoded_message))},
         {
             "Bucket": "TEST_BUCKET",
-            "Key": "retries/TEST_KEY",
+            "Key": "retries/splunk-failed/TEST_KEY",
             "VersionId": "TEST_VERSION_ID",
         },
     )
@@ -57,7 +58,40 @@ def test_get_records_from_s3(mocker):
         "src.mbtp_splunk_cloudwatch_reingestion.handler.s3_client",
         new=mocked_s3_client,
     )
-    results = get_records_from_s3("TEST_BUCKET", "retries/TEST_KEY", "TEST_VERSION_ID")
+    results = get_records_from_s3(
+        "TEST_BUCKET", "retries/splunk-failed/TEST_KEY", "TEST_VERSION_ID"
+    )
+
+    assert results == test_json_events
+
+
+def test_get_records_from_s3_processing_failed(mocker):
+    encoded_message = "\n".join(
+        json.dumps({"rawData": base64.b64encode(x.encode()).decode()})
+        for x in test_json_events
+    ).encode()
+
+    mocked_s3_client = boto3.client("s3", region_name=environ["AWS_REGION"])
+    s3_stubber = Stubber(mocked_s3_client)
+
+    s3_stubber.add_response(
+        "get_object",
+        {"Body": StreamingBody(io.BytesIO(encoded_message), len(encoded_message))},
+        {
+            "Bucket": "TEST_BUCKET",
+            "Key": "retries/processing-failed/TEST_KEY",
+            "VersionId": "TEST_VERSION_ID",
+        },
+    )
+    s3_stubber.activate()
+
+    mocker.patch(
+        "src.mbtp_splunk_cloudwatch_reingestion.handler.s3_client",
+        new=mocked_s3_client,
+    )
+    results = get_records_from_s3(
+        "TEST_BUCKET", "retries/processing-failed/TEST_KEY", "TEST_VERSION_ID"
+    )
 
     assert results == test_json_events
 
@@ -303,6 +337,11 @@ def test_does_file_exist_error(mocker):
 def test_handler(mocker):
     """Test to check that handler functions without error and calls the correct AWS APIs"""
 
+    encoded_message = "\n".join(
+        json.dumps({"rawData": base64.b64encode(gzip.compress(x.encode())).decode()})
+        for x in test_json_events
+    ).encode()
+
     test_event = {
         "Records": [
             {
@@ -313,7 +352,7 @@ def test_handler(mocker):
                                 "s3": {
                                     "bucket": {"name": "TEST_BUCKET"},
                                     "object": {
-                                        "key": "retries/TEST_KEY",
+                                        "key": "retries/splunk-failed/TEST_KEY",
                                         "versionId": "TEST_VERSION_ID",
                                     },
                                 }
@@ -322,7 +361,7 @@ def test_handler(mocker):
                                 "s3": {
                                     "bucket": {"name": "TEST_BUCKET"},
                                     "object": {
-                                        "key": "retries/NOT_EXIST",
+                                        "key": "retries/splunk-failed/NOT_EXIST",
                                         "versionId": "NOT_EXIST",
                                     },
                                 }
@@ -345,7 +384,7 @@ def test_handler(mocker):
         {},
         {
             "Bucket": "TEST_BUCKET",
-            "Key": "retries/TEST_KEY",
+            "Key": "retries/splunk-failed/TEST_KEY",
             "VersionId": "TEST_VERSION_ID",
         },
     )
@@ -354,7 +393,7 @@ def test_handler(mocker):
         {"Body": StreamingBody(io.BytesIO(encoded_message), len(encoded_message))},
         {
             "Bucket": "TEST_BUCKET",
-            "Key": "retries/TEST_KEY",
+            "Key": "retries/splunk-failed/TEST_KEY",
             "VersionId": "TEST_VERSION_ID",
         },
     )
@@ -364,7 +403,7 @@ def test_handler(mocker):
         {
             "Body": b'{"rawData": "eyJmb28zIjogImJhcjMiLCAiZmllbGRzIjoge319"}',
             "Bucket": "TEST_BUCKET",
-            "Key": "failed/TEST_KEY",
+            "Key": "failed/splunk-failed/TEST_KEY",
         },
     )
     s3_stubber.add_response(
@@ -372,7 +411,7 @@ def test_handler(mocker):
         {},
         {
             "Bucket": "TEST_BUCKET",
-            "Key": "retries/TEST_KEY",
+            "Key": "retries/splunk-failed/TEST_KEY",
             "VersionId": "TEST_VERSION_ID",
         },
     )
