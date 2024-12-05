@@ -36,7 +36,7 @@ test_json_events = [
 
 def test_get_records_from_s3_splunk_failed(mocker):
     encoded_message = "\n".join(
-        json.dumps({"rawData": base64.b64encode(gzip.compress(x.encode())).decode()})
+        json.dumps({"rawData": base64.b64encode(x.encode()).decode()})
         for x in test_json_events
     ).encode()
 
@@ -67,7 +67,7 @@ def test_get_records_from_s3_splunk_failed(mocker):
 
 def test_get_records_from_s3_processing_failed(mocker):
     encoded_message = "\n".join(
-        json.dumps({"rawData": base64.b64encode(x.encode()).decode()})
+        json.dumps({"rawData": base64.b64encode(gzip.compress(x.encode())).decode()})
         for x in test_json_events
     ).encode()
 
@@ -338,7 +338,7 @@ def test_handler(mocker):
     """Test to check that handler functions without error and calls the correct AWS APIs"""
 
     encoded_message = "\n".join(
-        json.dumps({"rawData": base64.b64encode(gzip.compress(x.encode())).decode()})
+        json.dumps({"rawData": base64.b64encode(x.encode()).decode()})
         for x in test_json_events
     ).encode()
 
