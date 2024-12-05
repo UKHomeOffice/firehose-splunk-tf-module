@@ -1,9 +1,9 @@
 # CloudWatch Alarm for Lambda Errors
 resource "aws_cloudwatch_metric_alarm" "lambda_error_alarm" {
   for_each = toset([
-    aws_lambda_function.firehose_lambda_transformation.name,
-    aws_lambda_function.firehose_lambda_reingestion.name,
-    aws_lambda_function.firehose_lambda_process_failures.name,
+    "${var.environment_prefix_variable}-${var.transformation_lambda_name}",
+    "${var.environment_prefix_variable}-${var.reingestion_lambda_name}",
+    "${var.environment_prefix_variable}-${var.process_failures_lambda_name}"
   ])
   alarm_name                = "${var.environment_prefix_variable}-${each.value}-lambda_errors_alarm"
   alarm_description         = "Triggers when the Lambda function errors exceed 0 in a minute."
@@ -28,9 +28,9 @@ resource "aws_cloudwatch_metric_alarm" "lambda_error_alarm" {
 # CloudWatch alarm for Lambda Throttling
 resource "aws_cloudwatch_metric_alarm" "lambda_throttles_alarm" {
   for_each = toset([
-    aws_lambda_function.firehose_lambda_transformation.name,
-    aws_lambda_function.firehose_lambda_reingestion.name,
-    aws_lambda_function.firehose_lambda_process_failures.name,
+    "${var.environment_prefix_variable}-${var.transformation_lambda_name}",
+    "${var.environment_prefix_variable}-${var.reingestion_lambda_name}",
+    "${var.environment_prefix_variable}-${var.process_failures_lambda_name}" 
   ])
   alarm_name                = "${var.environment_prefix_variable}-${each.value}-lambda_throttle_alarm"
   alarm_description         = "Triggers when the Lambda function is throttled."
@@ -55,8 +55,8 @@ resource "aws_cloudwatch_metric_alarm" "lambda_throttles_alarm" {
 # CloudWatch alarm for SQS Queue Messages
 resource "aws_cloudwatch_metric_alarm" "sqs_message_backlog" {
   for_each = toset([
-    aws_sqs_queue.retry_notification_queue.name,
-    aws_sqs_queue.retry_sqs_dql.name,
+    "${var.environment_prefix_variable}-${var.retry_sqs_name}",
+    "${var.environment_prefix_variable}-${var.retry_dlq_name}"
   ])
   alarm_name                = "${var.environment_prefix_variable}-${each.value}-sqs_message_backlog_alarm"
   alarm_description         = "Triggers when there are more than 3 messages in the SQS queue."
@@ -97,6 +97,6 @@ resource "aws_cloudwatch_metric_alarm" "cloudwatch_alarm_firehose_splunk_process
   alarm_actions = [aws_sns_topic.sns_topic_alerts.arn]
   ok_actions = [aws_sns_topic.sns_topic_alerts.arn]
   dimensions = {
-    DeliveryStreamName = aws_kinesis_firehose_delivery_stream.kinesis_firehose.name
+    DeliveryStreamName = local.firehose_stream_name
   }
 }
