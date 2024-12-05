@@ -2,7 +2,8 @@
 resource "aws_sqs_queue" "retry_notification_queue" {
   name                       = "${var.environment_prefix_variable}-${var.retry_sqs_name}"
   kms_master_key_id          = aws_kms_key.firehose_key.id
-  visibility_timeout_seconds = 5400
+  visibility_timeout_seconds = 60
+  delay_seconds              = 60
 
   redrive_policy = jsonencode({
     deadLetterTargetArn = aws_sqs_queue.retry_sqs_dql.arn
