@@ -163,11 +163,13 @@ def send_to_firehose(
         for log in data_to_firehose:
             # Compress the log with GZIP so we can process it the same as the
             # Cloudwatch logs when we receive it back on the transformation lambda.
-            compressed_data = base64.b64encode(
-                gzip.compress(json.dumps(log).encode())
-            ).decode()
+            compressed_data = gzip.compress(json.dumps(log).encode())
             record = {"Data": compressed_data}
-            record_size = len(json.dumps(record).encode())
+            record_size = len(
+                json.dumps(
+                    {"Data": base64.b64encode(compressed_data).decode()}
+                ).encode()
+            )
             # Check that the record/log isn't greater than the max_record_size
             # It shouldn't be as Firehose transformed it before.
             if record_size < max_record_size:
