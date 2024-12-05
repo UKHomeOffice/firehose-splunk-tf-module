@@ -303,6 +303,7 @@ def lambda_handler(event: dict, _context: dict):
                 continue
 
             # Get the logs from the file and assign them to firehose or S3
+            logging.info(f"Processing {key}")
             records = get_records_from_s3(bucket, key, version_id)
             for record in records:
                 for log in get_logs_from_record(record):
