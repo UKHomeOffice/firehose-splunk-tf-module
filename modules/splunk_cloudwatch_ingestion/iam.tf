@@ -49,7 +49,7 @@ data "aws_iam_policy_document" "kinesis_firehose_policy_document" {
   }
 
   statement {
-    actions   = ["kms:*"]
+    actions   = ["kms:GenerateDataKey", "kms:Decrypt", "kms:Encrypt"]
     resources = [var.s3_kms_key_arn, aws_kms_key.firehose_key.arn]
     effect    = "Allow"
   }
