@@ -5,7 +5,7 @@ resource "aws_cloudwatch_metric_alarm" "lambda_error_alarm" {
     "${var.environment_prefix_variable}-${var.reingestion_lambda_name}",
     "${var.environment_prefix_variable}-${var.process_failures_lambda_name}"
   ])
-  alarm_name                = "${var.environment_prefix_variable}-${each.value}-lambda_errors_alarm"
+  alarm_name                = "${each.value}-lambda_errors_alarm"
   alarm_description         = "Triggers when the Lambda function errors exceed 0 in a minute."
   comparison_operator       = "GreaterThanThreshold"
   evaluation_periods        = 5
@@ -32,7 +32,7 @@ resource "aws_cloudwatch_metric_alarm" "lambda_throttles_alarm" {
     "${var.environment_prefix_variable}-${var.reingestion_lambda_name}",
     "${var.environment_prefix_variable}-${var.process_failures_lambda_name}" 
   ])
-  alarm_name                = "${var.environment_prefix_variable}-${each.value}-lambda_throttle_alarm"
+  alarm_name                = "${each.value}-lambda_throttle_alarm"
   alarm_description         = "Triggers when the Lambda function is throttled."
   comparison_operator       = "GreaterThanThreshold"
   evaluation_periods        = 5
@@ -58,7 +58,7 @@ resource "aws_cloudwatch_metric_alarm" "sqs_message_backlog" {
     "${var.environment_prefix_variable}-${var.retry_sqs_name}",
     "${var.environment_prefix_variable}-${var.retry_dlq_name}"
   ])
-  alarm_name                = "${var.environment_prefix_variable}-${each.value}-sqs_message_backlog_alarm"
+  alarm_name                = "${each.value}-sqs_message_backlog_alarm"
   alarm_description         = "Triggers when there are more than 3 messages in the SQS queue."
   comparison_operator       = "GreaterThanThreshold"
   evaluation_periods        = 3
