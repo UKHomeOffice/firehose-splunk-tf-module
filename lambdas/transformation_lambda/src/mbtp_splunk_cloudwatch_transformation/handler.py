@@ -395,6 +395,7 @@ def process_records(records: list[dict], firehose_arn: str, config: dict) -> lis
             )
         elif set(("index", "sourcetype", "event")) <= data.keys():
             # Else if it's a reingested log which can skip processing
+            logging.info(f"Reingested log detected, forwarding it on. {r}")
             returned_records.append(
                 {"data": r["data"], "result": "Ok", "recordId": rec_id}
             )
