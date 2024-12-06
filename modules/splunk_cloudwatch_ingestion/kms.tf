@@ -31,6 +31,7 @@ resource "aws_kms_key_policy" "firehose_key_policy" {
         },
         Action = [
           "kms:Encrypt",
+          "kms:Decrypt",
           "kms:GenerateDataKey"
         ],
         Resource = aws_kms_key.firehose_key.arn,
