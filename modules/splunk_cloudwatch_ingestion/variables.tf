@@ -45,7 +45,7 @@ variable "firehose_role_name" {
 
 variable "firehose_buffer" {
   description = "https://www.terraform.io/docs/providers/aws/r/kinesis_firehose_delivery_stream.html#buffer_size"
-  default     = 1 # Megabytes
+  default     = 0.25 # Megabytes
 }
 
 variable "firehose_buffer_interval" {
@@ -65,7 +65,7 @@ variable "firehose_transform_buffer_interval" {
 
 variable "firehose_retry_duration" {
   description = "How long Kinesis Data Firehose retries sending data to Splunk"
-  default     = "60"
+  default     = 60
 }
 
 variable "firehose_log_group_name" {
@@ -135,7 +135,7 @@ variable "transformation_lambda_timeout" {
 }
 variable "transformation_lambda_memory_size" {
   description = "The function execution memory limit at which Lambda should terminate the function."
-  default     = 1536
+  default     = 512
 }
 
 # Reingestion Lambda
@@ -149,7 +149,7 @@ variable "reingestion_lambda_timeout" {
 }
 variable "reingestion_lambda_memory_size" {
   description = "The function execution memory limit at which Lambda should terminate the function."
-  default     = 1536
+  default     = 512
 }
 
 # Process Failures Lambda
@@ -163,7 +163,7 @@ variable "process_failures_lambda_timeout" {
 }
 variable "process_failures_lambda_memory_size" {
   description = "The function execution memory limit at which Lambda should terminate the function."
-  default     = 512
+  default     = 256
 }
 
 #
