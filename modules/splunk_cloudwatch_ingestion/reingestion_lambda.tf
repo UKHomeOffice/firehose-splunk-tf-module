@@ -37,6 +37,7 @@ resource "aws_cloudwatch_log_group" "reingestion_lambda_logs" {
   # checkov:skip=CKV_AWS_338: Ignore retention below 1 year
   name              = "/aws/lambda/${var.environment_prefix_variable}-${var.reingestion_lambda_name}"
   retention_in_days = var.lambda_log_retention
+  tags              = var.tags
 }
 
 resource "aws_lambda_event_source_mapping" "reingestion_lambda_trigger" {
@@ -77,6 +78,7 @@ resource "aws_iam_role_policy_attachment" "reingestion_lambda" {
 resource "aws_iam_policy" "reingestion_lambda_policy" {
   name   = "${var.environment_prefix_variable}-${var.reingestion_lambda_name}"
   policy = data.aws_iam_policy_document.reingestion_lambda_policy.json
+  tags   = var.tags
 }
 
 data "aws_iam_policy_document" "reingestion_lambda_policy" {

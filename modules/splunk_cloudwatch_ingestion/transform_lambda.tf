@@ -48,6 +48,7 @@ resource "aws_cloudwatch_log_group" "transformation_lambda_logs" {
   # checkov:skip=CKV_AWS_338: Ignore retention below 1 year
   name              = "/aws/lambda/${var.environment_prefix_variable}-${var.transformation_lambda_name}"
   retention_in_days = var.lambda_log_retention
+  tags              = var.tags
 }
 
 resource "aws_iam_role" "kinesis_firehose_lambda" {
@@ -66,7 +67,6 @@ resource "aws_iam_role" "kinesis_firehose_lambda" {
       }
     ]
   })
-
   tags = var.tags
 }
 
@@ -83,6 +83,7 @@ resource "aws_iam_role_policy_attachment" "lambda_policy_role_attachment" {
 resource "aws_iam_policy" "lambda_transformation_policy" {
   name   = "${var.environment_prefix_variable}-${var.transformation_lambda_name}"
   policy = data.aws_iam_policy_document.lambda_policy_doc.json
+  tags   = var.tags
 }
 
 data "aws_iam_policy_document" "lambda_policy_doc" {

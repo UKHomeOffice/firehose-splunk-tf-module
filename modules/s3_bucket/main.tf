@@ -1,6 +1,7 @@
 
 resource "aws_s3_bucket" "failed_bucket" {
   bucket = var.bucket_name
+  tags   = var.tags
 }
 
 resource "aws_s3_bucket_versioning" "failed_bucket" {
@@ -36,15 +37,15 @@ resource "aws_s3_bucket_policy" "failed_bucket_policy" {
 
 data "aws_iam_policy_document" "failed_bucket_policy" {
   statement {
-    actions   = ["*"]
-    effect    = "Deny"
+    actions = ["*"]
+    effect  = "Deny"
     resources = [
       "arn:aws:s3:::${var.bucket_name}/*"
     ]
     condition {
       test     = "StringNotEquals"
       variable = "aws:PrincipalArn"
-      values = var.approved_s3_resources
+      values   = var.approved_s3_resources
     }
   }
 }

@@ -2,10 +2,11 @@ resource "aws_kms_key" "s3_kms_key" {
   description             = "KMS Key to protect S3 content"
   enable_key_rotation     = true
   rotation_period_in_days = 90
+  tags                    = var.tags
 }
 
 resource "aws_kms_alias" "s3_kms_alias" {
-  name          = "alias/${var.bucket_name}-s3-key"
+  name          = "alias/${environment_prefix_variable}-s3-key"
   target_key_id = aws_kms_key.s3_kms_key.key_id
 }
 
@@ -42,7 +43,7 @@ data "aws_iam_policy_document" "s3_kms_policy" {
     condition {
       test     = "StringNotEquals"
       variable = "aws:PrincipalArn"
-      values = var.approved_s3_resources
+      values   = var.approved_s3_resources
     }
   }
 }

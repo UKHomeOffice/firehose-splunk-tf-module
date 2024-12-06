@@ -16,6 +16,7 @@ from src.mbtp_splunk_cloudwatch_reingestion.handler import (
     add_log_to_output_list,
     check_required_env_vars,
     get_logs_from_record,
+    get_s3_lines,
     lambda_handler,
     get_records_from_s3,
     send_to_firehose,
@@ -125,6 +126,20 @@ def test_add_log_to_output_list():
     assert data_to_s3 == [{"foo3": "bar3", "fields": {"firehose_errors": 4}}]
 
 
+def test_get_s3_lines():
+    data = [
+        {"foo1": "bar1", "fields": {"firehose_errors": 4}},
+        {"foo3": "bar3", "fields": {"firehose_errors": 4}},
+    ]
+    result = get_s3_lines(data)
+
+    for i, entry in enumerate(result):
+        assert (
+            json.loads(gzip.decompress(base64.b64decode(json.loads(entry)["rawData"])))
+            == data[i]
+        )
+
+
 def test_send_to_s3(mocker):
     mocked_s3_client = boto3.client("s3", region_name=environ["AWS_REGION"])
     s3_stubber = Stubber(mocked_s3_client)
@@ -133,7 +148,7 @@ def test_send_to_s3(mocker):
         "put_object",
         {},
         {
-            "Body": b'{"rawData": "eyJmb28xIjogImJhcjEiLCAiZmllbGRzIjoge319"}\n{"rawData": "eyJmb28zIjogImJhcjMiLCAiZmllbGRzIjoge319"}',
+            "Body": mock.ANY,
             "Bucket": "TEST_BUCKET",
             "Key": "retries/TEST_KEY",
         },
@@ -401,7 +416,7 @@ def test_handler(mocker):
         "put_object",
         {},
         {
-            "Body": b'{"rawData": "eyJmb28zIjogImJhcjMiLCAiZmllbGRzIjoge319"}',
+            "Body": mock.ANY,
             "Bucket": "TEST_BUCKET",
             "Key": "failed/splunk-failed/TEST_KEY",
         },

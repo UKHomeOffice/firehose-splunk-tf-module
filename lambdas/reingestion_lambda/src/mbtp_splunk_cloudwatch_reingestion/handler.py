@@ -111,6 +111,25 @@ def add_log_to_output_list(
         data_to_firehose.append(log)
 
 
+def get_s3_lines(data_to_s3: list[dict]) -> list:
+    s3_lines = []
+    for log in data_to_s3:
+        # Remove the firehose_errors key from the log so that when Splunk/Firehose
+        # is fixed, we will allow this file to be processed again and not end up back in S3.
+        log["fields"].pop("firehose_errors")
+        # Place the log back in S3 in the same format it we received it from Firehose in.
+        s3_lines.append(
+            json.dumps(
+                {
+                    "rawData": base64.b64encode(
+                        gzip.compress(json.dumps(log).encode())
+                    ).decode()
+                }
+            )
+        )
+    return s3_lines
+
+
 def send_to_s3(data_to_s3: list[dict], bucket: str, key: str):
     """Takes a list of log messages and puts them in S3
 
@@ -120,21 +139,7 @@ def send_to_s3(data_to_s3: list[dict], bucket: str, key: str):
         key (str): Key to save them to.
     """
     if data_to_s3:
-        s3_lines = []
-        for log in data_to_s3:
-            # Remove the firehose_errors key from the log so that when Splunk/Firehose
-            # is fixed, we will allow this file to be processed again and not end up back in S3.
-            log["fields"].pop("firehose_errors")
-            # Place the log back in S3 in the same format it we received it from Firehose in.
-            s3_lines.append(
-                json.dumps(
-                    {
-                        "rawData": base64.b64encode(
-                            gzip.compress(json.dumps(log).encode())
-                        ).decode()
-                    }
-                )
-            )
+        s3_lines = get_s3_lines(data_to_s3)
         s3_client.put_object(Bucket=bucket, Key=key, Body="\n".join(s3_lines).encode())
         logging.debug(f"Written file to {bucket}/{key}")
 

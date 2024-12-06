@@ -29,10 +29,11 @@ No modules.
 
 | Name | Description | Type | Default | Required |
 |------|-------------|------|---------|:--------:|
-| <a name="input_account"></a> [account](#input\_account) | The aws account where the firehose is hosted. | `number` | n/a | yes |
+| <a name="input_account_id"></a> [account\_id](#input\_account\_id) | The aws account where the firehose is hosted. | `number` | n/a | yes |
 | <a name="input_config_disk_path"></a> [config\_disk\_path](#input\_config\_disk\_path) | The path to config file on disk. | `string` | n/a | yes |
 | <a name="input_environment_prefix_variable"></a> [environment\_prefix\_variable](#input\_environment\_prefix\_variable) | Environment prefix provided by the importing module in order to ensure resources have unique names. | `string` | n/a | yes |
 | <a name="input_firehose_arn"></a> [firehose\_arn](#input\_firehose\_arn) | The ARN of the Firehose delivery stream. | `string` | n/a | yes |
+| <a name="input_tags"></a> [tags](#input\_tags) | A map of additional tags to associate with the resource | `map(string)` | `{}` | no |
 
 ## Outputs
 

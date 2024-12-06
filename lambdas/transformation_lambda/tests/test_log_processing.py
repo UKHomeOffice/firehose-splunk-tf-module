@@ -174,7 +174,11 @@ def test_process_records():
                 "\n".join([json.dumps(x) for x in transformed_logs]).encode()
             ).decode(),
         },
-        {"result": "Ok", "recordId": "2", "data": reingest_record_compressed},
+        {
+            "result": "Ok",
+            "recordId": "2",
+            "data": base64.b64encode(json.dumps(reingest_data).encode()).decode(),
+        },
         {"result": "ProcessingFailed", "recordId": "3"},
     ]
 

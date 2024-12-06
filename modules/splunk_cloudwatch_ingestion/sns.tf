@@ -4,6 +4,7 @@
 resource "aws_sns_topic" "sns_topic_alerts" {
   name              = "${var.environment_prefix_variable}-${var.alerts_sns_topic_name}"
   kms_master_key_id = aws_kms_key.firehose_key.id
+  tags              = var.tags
 }
 
 # SNS subscriptions
