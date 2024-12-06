@@ -21,7 +21,7 @@ resource "aws_kms_key_policy" "firehose_key_policy" {
           AWS = "arn:aws:iam::${var.account_id}:root"
         },
         Action   = "kms:*",
-        Resource = "*"
+        Resource = aws_kms_key.firehose_key.arn
       },
       {
         Sid    = "AllowS3ToUseKey",
@@ -33,7 +33,7 @@ resource "aws_kms_key_policy" "firehose_key_policy" {
           "kms:Encrypt",
           "kms:GenerateDataKey"
         ],
-        Resource = "*",
+        Resource = aws_kms_key.firehose_key.arn,
         Condition = {
           StringEquals = {
             "aws:SourceArn" = var.s3_bucket_arn
@@ -50,7 +50,7 @@ resource "aws_kms_key_policy" "firehose_key_policy" {
           "kms:Decrypt",
           "kms:GenerateDataKey"
         ],
-        Resource = "*",
+        Resource = aws_kms_key.firehose_key.arn,
         Condition = {
           "ForAnyValue:StringEquals" = {
             "aws:SourceArn" = [
@@ -59,6 +59,18 @@ resource "aws_kms_key_policy" "firehose_key_policy" {
             ]
           }
         }
+      },
+      {
+        Sid    = "AllowCloudwatch",
+        Effect = "Allow",
+        Principal = {
+          Service = "cloudwatch.amazonaws.com"
+        },
+        Action = [
+          "kms:Decrypt",
+          "kms:GenerateDataKey"
+        ],
+        Resource = aws_kms_key.firehose_key.arn,
       }
     ]
   })
