@@ -397,7 +397,11 @@ def process_records(records: list[dict], firehose_arn: str, config: dict) -> lis
             # Else if it's a reingested log which can skip processing
             logging.info(f"Reingested log detected, forwarding it on. {r}")
             returned_records.append(
-                {"data": r["data"], "result": "Ok", "recordId": rec_id}
+                {
+                    "data": base64.b64encode(json.dumps(data).encode()).decode(),
+                    "result": "Ok",
+                    "recordId": rec_id,
+                }
             )
         else:
             # Else it's an unknown log, so reject it
