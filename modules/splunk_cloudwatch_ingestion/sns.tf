@@ -23,6 +23,7 @@ resource "aws_sns_topic_policy" "s3_to_sns_policy" {
     Version = "2012-10-17",
     Statement = [
       {
+        Sid    = "Allow S3",
         Effect = "Allow",
         Principal = {
           Service = "s3.amazonaws.com"
@@ -31,6 +32,7 @@ resource "aws_sns_topic_policy" "s3_to_sns_policy" {
         Resource = aws_sns_topic.sns_topic_alerts.arn,
       },
       {
+        Sid    = "Allow Cloudwatch",
         Effect = "Allow",
         Principal = {
           Service = "cloudwatch.amazonaws.com"
