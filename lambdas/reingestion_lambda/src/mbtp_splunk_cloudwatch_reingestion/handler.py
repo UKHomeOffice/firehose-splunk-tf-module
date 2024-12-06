@@ -314,15 +314,14 @@ def lambda_handler(event: dict, _context: dict):
                 for log in get_logs_from_record(record):
                     add_log_to_output_list(log, data_to_firehose, data_to_s3)
 
-            logging.info(
-                f"Processed {bucket}/{key}, sending {len(data_to_firehose)} to Firehose."
-            )
+            logging.info(f"Processed {bucket}/{key}")
+            logging.info(f"Sending {len(data_to_firehose)} to Firehose")
             send_to_firehose(data_to_firehose, data_to_s3)
 
-            logging.info(f"Sending {len(data_to_s3)} to S3.")
+            logging.info(f"Sending {len(data_to_s3)} to S3")
             send_to_s3(
                 data_to_s3, bucket, f"{FAILED_PREFIX}{key.removeprefix(RETRIES_PREFIX)}"
             )
 
-            logging.info(f"Finished processing {bucket}/{key}, deleting it.")
+            logging.info(f"Deleting {bucket}/{key}")
             s3_client.delete_object(Bucket=bucket, Key=key, VersionId=version_id)

@@ -23,15 +23,20 @@ resource "aws_sns_topic_policy" "s3_to_sns_policy" {
     Version = "2012-10-17",
     Statement = [
       {
-        Effect    = "Allow",
-        Principal = "*",
-        Action    = "SNS:Publish",
-        Resource  = aws_sns_topic.sns_topic_alerts.arn,
-        Condition = {
-          ArnLike = {
-            "aws:SourceArn" : var.s3_bucket_arn
-          }
+        Effect = "Allow",
+        Principal = {
+          Service = "s3.amazonaws.com"
         }
+        Action   = "SNS:Publish",
+        Resource = aws_sns_topic.sns_topic_alerts.arn,
+      },
+      {
+        Effect = "Allow",
+        Principal = {
+          Service = "cloudwatch.amazonaws.com"
+        }
+        Action   = "SNS:Publish",
+        Resource = aws_sns_topic.sns_topic_alerts.arn,
       }
     ]
   })
