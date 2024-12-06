@@ -28,6 +28,7 @@ resource "aws_iam_role_policy_attachment" "kinesis_fh_role_attachment" {
 resource "aws_iam_policy" "kinesis_firehose_policy" {
   name   = "${var.environment_prefix_variable}-${var.firehose_role_name}"
   policy = data.aws_iam_policy_document.kinesis_firehose_policy_document.json
+  tags   = var.tags
 }
 
 data "aws_iam_policy_document" "kinesis_firehose_policy_document" {

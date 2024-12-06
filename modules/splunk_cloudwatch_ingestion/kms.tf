@@ -2,6 +2,7 @@ resource "aws_kms_key" "firehose_key" {
   description             = "KMS key for Kinesis Firehose S3 backup encryption"
   deletion_window_in_days = 10
   enable_key_rotation     = true
+  tags                    = var.tags
 }
 
 resource "aws_kms_alias" "firehose_key_alias" {

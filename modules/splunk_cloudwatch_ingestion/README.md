@@ -26,6 +26,10 @@ No modules.
 | [aws_cloudwatch_log_group.reingestion_lambda_logs](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/cloudwatch_log_group) | resource |
 | [aws_cloudwatch_log_group.transformation_lambda_logs](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/cloudwatch_log_group) | resource |
 | [aws_cloudwatch_log_stream.firehose_log_stream](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/cloudwatch_log_stream) | resource |
+| [aws_cloudwatch_metric_alarm.cloudwatch_alarm_firehose_splunk_processing](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/cloudwatch_metric_alarm) | resource |
+| [aws_cloudwatch_metric_alarm.lambda_error_alarm](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/cloudwatch_metric_alarm) | resource |
+| [aws_cloudwatch_metric_alarm.lambda_throttles_alarm](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/cloudwatch_metric_alarm) | resource |
+| [aws_cloudwatch_metric_alarm.sqs_message_backlog](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/cloudwatch_metric_alarm) | resource |
 | [aws_iam_policy.kinesis_firehose_policy](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/iam_policy) | resource |
 | [aws_iam_policy.lambda_transformation_policy](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/iam_policy) | resource |
 | [aws_iam_policy.process_failures_lambda_policy](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/iam_policy) | resource |
@@ -78,7 +82,7 @@ No modules.
 | <a name="input_firehose_log_group_name"></a> [firehose\_log\_group\_name](#input\_firehose\_log\_group\_name) | Name of the CloudWatch log group for Kinesis Firehose | `string` | `"cw2splunk-log-group"` | no |
 | <a name="input_firehose_log_retention"></a> [firehose\_log\_retention](#input\_firehose\_log\_retention) | Log retention for the firehose cloudwatch logs | `number` | `30` | no |
 | <a name="input_firehose_log_stream_name"></a> [firehose\_log\_stream\_name](#input\_firehose\_log\_stream\_name) | Name of the CloudWatch log stream for Kinesis Firehose CloudWatch log group | `string` | `"cw2splunk-logs"` | no |
-| <a name="input_firehose_retry_duration"></a> [firehose\_retry\_duration](#input\_firehose\_retry\_duration) | How long Kinesis Data Firehose retries sending data to Splunk | `string` | `"60"` | no |
+| <a name="input_firehose_retry_duration"></a> [firehose\_retry\_duration](#input\_firehose\_retry\_duration) | How long Kinesis Data Firehose retries sending data to Splunk | `number` | `60` | no |
 | <a name="input_firehose_role_name"></a> [firehose\_role\_name](#input\_firehose\_role\_name) | Name of IAM Role for the Kinesis Firehose | `string` | `"cw2splunk-fh-role"` | no |
 | <a name="input_firehose_transform_buffer"></a> [firehose\_transform\_buffer](#input\_firehose\_transform\_buffer) | https://www.terraform.io/docs/providers/aws/r/kinesis_firehose_delivery_stream.html#buffer_size | `number` | `0.25` | no |
 | <a name="input_firehose_transform_buffer_interval"></a> [firehose\_transform\_buffer\_interval](#input\_firehose\_transform\_buffer\_interval) | Buffer incoming data for the specified period of time, in seconds, before delivering it to the destination | `number` | `60` | no |
@@ -87,12 +91,12 @@ No modules.
 | <a name="input_hec_url"></a> [hec\_url](#input\_hec\_url) | Splunk Kinesis URL for submitting CloudWatch logs to splunk | `any` | n/a | yes |
 | <a name="input_kms_key_name"></a> [kms\_key\_name](#input\_kms\_key\_name) | Name of KMS key for the Kinesis Firehose | `string` | `"cw2splunk-key"` | no |
 | <a name="input_lambda_log_retention"></a> [lambda\_log\_retention](#input\_lambda\_log\_retention) | Log retention for the lambda cloudwatch logs | `number` | `30` | no |
-| <a name="input_process_failures_lambda_memory_size"></a> [process\_failures\_lambda\_memory\_size](#input\_process\_failures\_lambda\_memory\_size) | The function execution memory limit at which Lambda should terminate the function. | `number` | `512` | no |
+| <a name="input_process_failures_lambda_memory_size"></a> [process\_failures\_lambda\_memory\_size](#input\_process\_failures\_lambda\_memory\_size) | The function execution memory limit at which Lambda should terminate the function. | `number` | `256` | no |
 | <a name="input_process_failures_lambda_name"></a> [process\_failures\_lambda\_name](#input\_process\_failures\_lambda\_name) | Name of Lambda function to process any failures | `string` | `"cw2splunk-process-failures-lambda"` | no |
 | <a name="input_process_failures_lambda_timeout"></a> [process\_failures\_lambda\_timeout](#input\_process\_failures\_lambda\_timeout) | The function execution time at which Lambda should terminate the function. | `number` | `900` | no |
 | <a name="input_python_runtime"></a> [python\_runtime](#input\_python\_runtime) | Runtime version of python for Lambda functions | `string` | `"python3.12"` | no |
 | <a name="input_region"></a> [region](#input\_region) | the AWS region where the firehose is running | `any` | n/a | yes |
-| <a name="input_reingestion_lambda_memory_size"></a> [reingestion\_lambda\_memory\_size](#input\_reingestion\_lambda\_memory\_size) | The function execution memory limit at which Lambda should terminate the function. | `number` | `1536` | no |
+| <a name="input_reingestion_lambda_memory_size"></a> [reingestion\_lambda\_memory\_size](#input\_reingestion\_lambda\_memory\_size) | The function execution memory limit at which Lambda should terminate the function. | `number` | `512` | no |
 | <a name="input_reingestion_lambda_name"></a> [reingestion\_lambda\_name](#input\_reingestion\_lambda\_name) | Name of Lambda function to try reingesting logs back into firehose | `string` | `"cw2splunk-reingestion-lambda"` | no |
 | <a name="input_reingestion_lambda_timeout"></a> [reingestion\_lambda\_timeout](#input\_reingestion\_lambda\_timeout) | The function execution time at which Lambda should terminate the function. | `number` | `900` | no |
 | <a name="input_retry_dlq_name"></a> [retry\_dlq\_name](#input\_retry\_dlq\_name) | Name of SQS DLQ queue that events get sent to if the reingestion lambda breaks | `string` | `"cw2splunk-retry-dlq"` | no |
@@ -104,7 +108,7 @@ No modules.
 | <a name="input_s3_kms_key_arn"></a> [s3\_kms\_key\_arn](#input\_s3\_kms\_key\_arn) | KMS Key ARN used to protect the S3 bucket. | `any` | n/a | yes |
 | <a name="input_s3_retries_prefix"></a> [s3\_retries\_prefix](#input\_s3\_retries\_prefix) | Prefix to store failed Firehose logs that need reingesting. | `string` | `"retries/"` | no |
 | <a name="input_tags"></a> [tags](#input\_tags) | A map of additional tags to associate with the resource | `map(string)` | `{}` | no |
-| <a name="input_transformation_lambda_memory_size"></a> [transformation\_lambda\_memory\_size](#input\_transformation\_lambda\_memory\_size) | The function execution memory limit at which Lambda should terminate the function. | `number` | `1536` | no |
+| <a name="input_transformation_lambda_memory_size"></a> [transformation\_lambda\_memory\_size](#input\_transformation\_lambda\_memory\_size) | The function execution memory limit at which Lambda should terminate the function. | `number` | `512` | no |
 | <a name="input_transformation_lambda_name"></a> [transformation\_lambda\_name](#input\_transformation\_lambda\_name) | Name of Lambda function responsible for parsing messages heading to splunk | `string` | `"cw2splunk-transformation-lambda"` | no |
 | <a name="input_transformation_lambda_timeout"></a> [transformation\_lambda\_timeout](#input\_transformation\_lambda\_timeout) | The function execution time at which Lambda should terminate the function. | `number` | `900` | no |
 

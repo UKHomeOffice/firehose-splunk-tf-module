@@ -26,7 +26,7 @@ def test_handler(mocker):
     sqs_stubber.add_response(
         "start_message_move_task",
         {"TaskHandle": "test"},
-        {"SourceArn": "SQS_QUEUE_ARN", "DestinationArn": "DLQ_QUEUE_ARN"},
+        {"SourceArn": "DLQ_QUEUE_ARN", "DestinationArn": "SQS_QUEUE_ARN"},
     )
     sqs_stubber.activate()
 

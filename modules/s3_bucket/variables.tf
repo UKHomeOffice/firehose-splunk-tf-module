@@ -11,5 +11,16 @@ variable "approved_s3_resources" {
 
 variable "account_id" {
   description = "IAM account ID"
-  type = string
+  type        = string
+}
+
+variable "tags" {
+  description = "A map of additional tags to associate with the resource"
+  type        = map(string)
+  default     = {}
+}
+
+variable "environment_prefix_variable" {
+  description = "Environment prefix provided by the importing module in order to ensure resources have unique names."
+  type        = string
 }
