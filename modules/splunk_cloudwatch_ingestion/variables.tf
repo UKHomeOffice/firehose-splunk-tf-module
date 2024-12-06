@@ -45,7 +45,7 @@ variable "firehose_role_name" {
 
 variable "firehose_buffer" {
   description = "https://www.terraform.io/docs/providers/aws/r/kinesis_firehose_delivery_stream.html#buffer_size"
-  default     = 0.25 # Megabytes
+  default     = 1 # Megabytes
 }
 
 variable "firehose_buffer_interval" {
