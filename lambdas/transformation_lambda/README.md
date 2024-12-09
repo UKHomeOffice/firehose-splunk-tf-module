@@ -10,7 +10,9 @@ log_groups:
     accounts:
       - <ACCOUNT_ID> # To allow cross account subscription filters
     index: <INDEX>
-    sourcetype: <SOURCETYPE>
+    log_streams:
+      - regex: <LOG_STREAM_NAME_REGEX>
+        sourcetype: <SOURCETYPE>
     subscription_filter: <SUBSCRIPTION_FILTER> # Optional. Default to allow all.
 sourcetypes:
   <SOURCETYPE>:
