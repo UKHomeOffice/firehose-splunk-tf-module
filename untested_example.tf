@@ -7,22 +7,25 @@ locals {
   region                      = data.aws_region.current.name
   config_file                 = "./untested_example_config.yaml"
   environment_prefix_variable = "example"
+  bucket_name                 = "EXAMPLE_BUCKET_NAME"
+  bucket_arn                  = "EXAMPLE_BUCKET_ARN"
+  bucket_kms_arn              = "EXAMPLE_BUCKET_KEY_ARN"
 }
 
 # S3 module
 # NOTE: Although we provide a module for creating a S3 bucket, 
 # we recommend using your own bucket creation templates.
-module "bucket" {
-  source                      = "./modules/s3_bucket"
-  bucket_name                 = "EXAMPLE_BUCKET"
-  approved_s3_resources       = []
-  account_id                  = local.account_id
-  environment_prefix_variable = local.environment_prefix_variable
-}
+# module "bucket" {
+#   source                      = "./modules/s3_bucket"
+#   bucket_name                 = local.bucket_name
+#   approved_s3_resources       = []
+#   account_id                  = local.account_id
+#   environment_prefix_variable = local.environment_prefix_variable
+# }
 
 # Upload the config file to the bucket
 resource "aws_s3_object" "config_upload" {
-  bucket = module.bucket.bucket_name
+  bucket = local.bucket_name
   key    = "config.yaml"
   source = local.config_file
   etag   = filemd5(local.config_file)
@@ -32,15 +35,15 @@ resource "aws_s3_object" "config_upload" {
 module "firehose" {
   source                      = "./modules/splunk_cloudwatch_ingestion"
   environment_prefix_variable = local.environment_prefix_variable
-  s3_bucket_name              = module.bucket.bucket_name
-  s3_bucket_arn               = module.bucket.bucket_arn
+  s3_bucket_name              = local.bucket_name
+  s3_bucket_arn               = local.bucket_arn
   hec_token                   = "EXAMPLE_HEC_TOKEN"
   hec_url                     = "EXAMPLE_HEC_URL"
   alerts_subscription_emails  = ["EXAMPLE_ALERTS_EMAIL_ADDRESS"]
   region                      = local.region
   account_id                  = local.account_id
   s3_config_file_key          = aws_s3_object.config_upload.key
-  s3_kms_key_arn              = module.bucket.kms_arn
+  s3_kms_key_arn              = local.bucket_kms_arn
 }
 
 # Subscription module
