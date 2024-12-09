@@ -10,6 +10,8 @@ locals {
 }
 
 # S3 module
+# NOTE: Although we provide a module for creating a S3 bucket, 
+# we recommend using your own bucket creation templates.
 module "bucket" {
   source                      = "./modules/s3_bucket"
   bucket_name                 = "EXAMPLE_BUCKET"
