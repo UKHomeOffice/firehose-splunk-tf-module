@@ -21,6 +21,10 @@ resource "aws_lambda_function" "firehose_lambda_reingestion" {
   timeout          = var.reingestion_lambda_timeout
   memory_size      = var.reingestion_lambda_memory_size
   tags             = var.tags
+  logging_config {
+    log_format = "JSON"
+    log_group  = aws_cloudwatch_log_group.reingestion_lambda_logs.name
+  }
   environment {
     variables = {
       MAX_RETRIES    = 3
@@ -29,7 +33,6 @@ resource "aws_lambda_function" "firehose_lambda_reingestion" {
       FAILED_PREFIX  = var.s3_failed_prefix
     }
   }
-  depends_on = [aws_cloudwatch_log_group.reingestion_lambda_logs]
 }
 
 resource "aws_cloudwatch_log_group" "reingestion_lambda_logs" {

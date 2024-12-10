@@ -19,10 +19,10 @@ resource "aws_cloudwatch_metric_alarm" "lambda_error_alarm" {
   dimensions = {
     FunctionName = each.value
   }
-
-  actions_enabled = true
-  alarm_actions = [aws_sns_topic.sns_topic_alerts.arn]
-  ok_actions = [aws_sns_topic.sns_topic_alerts.arn]
+  treat_missing_data = "ignore"
+  actions_enabled    = true
+  alarm_actions      = [aws_sns_topic.sns_topic_alerts.arn]
+  ok_actions         = [aws_sns_topic.sns_topic_alerts.arn]
 }
 
 # CloudWatch alarm for Lambda Throttling
@@ -30,7 +30,7 @@ resource "aws_cloudwatch_metric_alarm" "lambda_throttles_alarm" {
   for_each = toset([
     "${var.environment_prefix_variable}-${var.transformation_lambda_name}",
     "${var.environment_prefix_variable}-${var.reingestion_lambda_name}",
-    "${var.environment_prefix_variable}-${var.process_failures_lambda_name}" 
+    "${var.environment_prefix_variable}-${var.process_failures_lambda_name}"
   ])
   alarm_name                = "${each.value}-lambda_throttle_alarm"
   alarm_description         = "Triggers when the Lambda function is throttled."
@@ -46,10 +46,10 @@ resource "aws_cloudwatch_metric_alarm" "lambda_throttles_alarm" {
   dimensions = {
     FunctionName = each.value
   }
-
-  actions_enabled = true
-  alarm_actions = [aws_sns_topic.sns_topic_alerts.arn]
-  ok_actions = [aws_sns_topic.sns_topic_alerts.arn]
+  treat_missing_data = "ignore"
+  actions_enabled    = true
+  alarm_actions      = [aws_sns_topic.sns_topic_alerts.arn]
+  ok_actions         = [aws_sns_topic.sns_topic_alerts.arn]
 }
 
 # CloudWatch alarm for SQS Queue Messages
@@ -72,10 +72,10 @@ resource "aws_cloudwatch_metric_alarm" "sqs_message_backlog" {
   dimensions = {
     QueueName = each.value
   }
-
-  actions_enabled = true
-  alarm_actions = [aws_sns_topic.sns_topic_alerts.arn]
-  ok_actions = [aws_sns_topic.sns_topic_alerts.arn]
+  treat_missing_data = "ignore"
+  actions_enabled    = true
+  alarm_actions      = [aws_sns_topic.sns_topic_alerts.arn]
+  ok_actions         = [aws_sns_topic.sns_topic_alerts.arn]
 }
 
 
@@ -92,10 +92,10 @@ resource "aws_cloudwatch_metric_alarm" "cloudwatch_alarm_firehose_splunk_process
   threshold                 = 1
   insufficient_data_actions = []
   tags                      = var.tags
-
-  actions_enabled = true
-  alarm_actions = [aws_sns_topic.sns_topic_alerts.arn]
-  ok_actions = [aws_sns_topic.sns_topic_alerts.arn]
+  treat_missing_data        = "ignore"
+  actions_enabled           = true
+  alarm_actions             = [aws_sns_topic.sns_topic_alerts.arn]
+  ok_actions                = [aws_sns_topic.sns_topic_alerts.arn]
   dimensions = {
     DeliveryStreamName = local.firehose_stream_name
   }
