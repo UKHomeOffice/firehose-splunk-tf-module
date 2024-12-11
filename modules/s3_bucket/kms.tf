@@ -6,7 +6,7 @@ resource "aws_kms_key" "s3_kms_key" {
 }
 
 resource "aws_kms_alias" "s3_kms_alias" {
-  name          = "alias/${environment_prefix_variable}-s3-key"
+  name          = "alias/${var.environment_prefix_variable}-s3-key"
   target_key_id = aws_kms_key.s3_kms_key.key_id
 }
 
