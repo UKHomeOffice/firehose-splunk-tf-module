@@ -37,6 +37,12 @@ resource "aws_s3_bucket_policy" "failed_bucket_policy" {
 
 data "aws_iam_policy_document" "failed_bucket_policy" {
   statement {
+
+    principals {
+      type        = "*"
+      identifiers = ["*"]
+    }
+
     actions = ["*"]
     effect  = "Deny"
     resources = [
