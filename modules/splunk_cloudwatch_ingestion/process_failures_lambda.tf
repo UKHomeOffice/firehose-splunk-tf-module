@@ -1,7 +1,8 @@
 data "archive_file" "process_failures_lambda_function" {
   type        = "zip"
   source_dir  = "${path.module}/../../lambdas/process_failures_lambda/src/mbtp_splunk_cloudwatch_process_failures/"
-  output_path = "${path.module}/../../lambdas/process_failures_lambda/src/mbtp_splunk_cloudwatch_process_failures/handler.zip"
+  #output_path = "${path.module}/../../lambdas/process_failures_lambda/src/mbtp_splunk_cloudwatch_process_failures/handler.zip"
+  output_path = "${path.root}/tmp/mbtp_splunk_cloudwatch_process_failures/handler.zip"
 }
 
 resource "aws_lambda_function" "firehose_lambda_process_failures" {

@@ -1,7 +1,8 @@
 data "archive_file" "reingestion_lambda_function" {
   type        = "zip"
   source_dir  = "${path.module}/../../lambdas/reingestion_lambda/src/mbtp_splunk_cloudwatch_reingestion/"
-  output_path = "${path.module}/../../lambdas/reingestion_lambda/src/mbtp_splunk_cloudwatch_reingestion/handler.zip"
+  # output_path = "${path.module}/../../lambdas/reingestion_lambda/src/mbtp_splunk_cloudwatch_reingestion/handler.zip"
+  output_path = "${path.root}/tmp/mbtp_splunk_cloudwatch_reingestion/handler.zip"
 }
 
 resource "aws_lambda_function" "firehose_lambda_reingestion" {

@@ -13,7 +13,8 @@ data "archive_file" "transformation_lambda_compressor" {
   excludes   = ["__pycache__"]
 
   source_dir  = "${path.module}/../../lambdas/transformation_lambda/package/"
-  output_path = "${path.module}/../../lambdas/transformation_lambda/package/handler.zip"
+  # output_path = "${path.module}/../../lambdas/transformation_lambda/package/handler.zip"
+  output_path = "${path.root}/tmp/transformation_lambda/handler.zip"
   type        = "zip"
 }
 
