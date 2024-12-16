@@ -2,7 +2,7 @@
 resource "aws_sqs_queue" "retry_notification_queue" {
   name                       = "${var.environment_prefix_variable}-${var.retry_sqs_name}"
   kms_master_key_id          = aws_kms_key.firehose_key.id
-  visibility_timeout_seconds = 60
+  visibility_timeout_seconds = var.reingestion_lambda_timeout*6 # aws recommends 6x lambda timeout 
   delay_seconds              = 60
 
   redrive_policy = jsonencode({
@@ -39,6 +39,6 @@ resource "aws_sqs_queue_policy" "s3_sqs" {
 resource "aws_sqs_queue" "retry_sqs_dql" {
   name                       = "${var.environment_prefix_variable}-${var.retry_dlq_name}"
   kms_master_key_id          = aws_kms_key.firehose_key.id
-  visibility_timeout_seconds = 5400
+  visibility_timeout_seconds = var.reingestion_lambda_timeout*6 # aws recommends 6x lambda timeout 
   tags                       = var.tags
 }
