@@ -49,7 +49,7 @@ data "aws_iam_policy_document" "failed_bucket_policy" {
       "arn:aws:s3:::${var.bucket_name}/*"
     ]
     condition {
-      test     = "StringNotEquals"
+      test     = "StringNotLike"
       variable = "aws:PrincipalArn"
       values   = var.approved_s3_resources
     }

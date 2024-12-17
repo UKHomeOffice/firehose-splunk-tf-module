@@ -41,7 +41,7 @@ data "aws_iam_policy_document" "s3_kms_policy" {
       identifiers = ["*"]
     }
     condition {
-      test     = "StringNotEquals"
+      test     = "StringNotLike"
       variable = "aws:PrincipalArn"
       values   = var.approved_s3_resources
     }
