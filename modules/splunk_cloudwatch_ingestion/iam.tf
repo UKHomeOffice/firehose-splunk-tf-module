@@ -32,10 +32,10 @@ resource "aws_iam_policy" "kinesis_firehose_policy" {
 }
 
 data "aws_iam_policy_document" "kinesis_firehose_policy_document" {
-  # checkov:skip=CKV_AWS_109:for testing  
-  # checkov:skip=CKV_AWS_110:for testing
-  # checkov:skip=CKV_AWS_111:for testing
-  # checkov:skip=CKV_AWS_356:for testing
+  # checkov:skip=CKV_AWS_111
+  # checkov:skip=CKV_AWS_356
+  # checkov:skip=CKV_AWS_109 test
+
   statement {
     actions = [
       "s3:AbortMultipartUpload",
@@ -45,13 +45,7 @@ data "aws_iam_policy_document" "kinesis_firehose_policy_document" {
       "s3:ListBucketMultipartUploads",
       "s3:PutObject",
     ]
-    resources = ["${var.firehose_failures_bucket_arn}/*",]
-    effect = "Allow"
-  }
-
-  statement {
-    actions   = ["kms:*"]
-    resources = ["*"]
+    resources = [var.s3_bucket_arn, "${var.s3_bucket_arn}/*"]
     effect    = "Allow"
   }
 
