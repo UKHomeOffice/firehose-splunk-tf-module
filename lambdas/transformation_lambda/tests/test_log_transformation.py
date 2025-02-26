@@ -1,7 +1,7 @@
 import pytest
 from src.mbtp_splunk_cloudwatch_transformation.handler import (
     is_json,
-    load_json_gzip_base64,
+    load_firehose_record_data,
     transform_cloudwatch_log_event,
 )
 
@@ -11,10 +11,14 @@ def test_is_json():
     assert is_json('{"foo":"bar"}') is True
 
 
-def test_load_json_gzip_base64():
-    assert load_json_gzip_base64("H4sIABSPQGcC/6tWSsvPV7JSSkosUqoFAO/1K/4NAAAA") == {
-        "foo": "bar"
-    }
+def test_load_firehose_record_data():
+    assert load_firehose_record_data(
+        "H4sIABSPQGcC/6tWSsvPV7JSSkosUqoFAO/1K/4NAAAA"
+    ) == {"foo": "bar"}
+
+
+def test_load_json_base64():
+    assert load_firehose_record_data("eyJmb28iOiJiYXIifQo=") == {"foo": "bar"}
 
 
 test_log_transformations = [

@@ -68,7 +68,6 @@ transformed_logs = [
 
 
 def test_process_cloudwatch_log_record_good():
-
     expected_result = {
         "data": base64.b64encode(
             "\n".join([json.dumps(x) for x in transformed_logs]).encode()

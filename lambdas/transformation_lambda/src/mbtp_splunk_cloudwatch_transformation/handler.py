@@ -203,7 +203,7 @@ def is_json(j: str) -> bool:
     return True
 
 
-def load_json_gzip_base64(base64_data: str) -> dict:
+def load_firehose_record_data(base64_data: str) -> dict:
     """Converts a b64, gzip compressed string into a dictionary
 
     Args:
@@ -212,7 +212,11 @@ def load_json_gzip_base64(base64_data: str) -> dict:
     Returns:
         dict: Decoded, decompressed, loaded dictionary
     """
-    return json.loads(gzip.decompress(base64.b64decode(base64_data)))
+
+    try:
+        return json.loads(gzip.decompress(base64.b64decode(base64_data)))
+    except gzip.BadGzipFile:
+        return json.loads(base64.b64decode(base64_data))
 
 
 def transform_cloudwatch_log_event(
@@ -388,7 +392,7 @@ def process_records(records: list[dict], firehose_arn: str, config: dict) -> lis
     """
     returned_records = []
     for r in records:
-        data = load_json_gzip_base64(r["data"])
+        data = load_firehose_record_data(r["data"])
         rec_id = r["recordId"]
 
         if set(("messageType", "logGroup", "owner", "logEvents")) <= data.keys():
@@ -396,6 +400,10 @@ def process_records(records: list[dict], firehose_arn: str, config: dict) -> lis
             returned_records.append(
                 process_cloudwatch_log_record(data, rec_id, firehose_arn, config)
             )
+        elif set(("source", "detail-type")) <= data.keys():
+            # If it's an Eventbridge event record
+            logging.info("EventBridge Log")
+            logging.info(data)
         elif set(("index", "sourcetype", "event")) <= data.keys():
             # Else if it's a reingested log which can skip processing
             logging.info(f"Reingested log detected, forwarding it on. {r}")
@@ -566,7 +574,7 @@ def work_out_records_to_reingest(
         # We shouldn't get any processed reingested logs hitting this as they will be less than 6MB (reingestion already checked that)
         if record_size > max_return_size:
             # Reload original data
-            cwl_record = load_json_gzip_base64(original_record["data"])
+            cwl_record = load_firehose_record_data(original_record["data"])
             # If there is more than one log event, split log events in half and re-process
             if len(cwl_record.get("logEvents", [])) > 1:
                 rec["result"] = "Dropped"
