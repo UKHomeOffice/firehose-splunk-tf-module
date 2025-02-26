@@ -1,0 +1,96 @@
+log_groups:
+  example_log_group:
+    accounts:
+      - 123456789123
+    index: example_index
+    log_streams:
+      - regex: example_.*
+        sourcetype: example_sourcetype
+      - regex: test_.*
+        sourcetype: test_sourcetype
+    subscription_filter: " "
+
+sourcetypes:
+  sourcetype_without_filters: {}
+  test_sourcetype:
+    denylist_regexes:
+      - foo
+  example_sourcetype:
+    allowlist_regexes:
+      - ^{*
+    redact_regexes:
+      - redact
+
+# INPUT:
+#  account = 111111111111
+#  log_group_name = example_log_group
+#  log_stream_name = test_stream
+#  log_content = '{"foo":"bar"}'
+# OUTPUT:
+#  Log Dropped due to no matching account
+
+# INPUT:
+#  account = 123456789123
+#  log_group_name = foo_log_group
+#  log_stream_name = test_stream
+#  log_content = '{"foo":"bar"}'
+# OUTPUT:
+#  Log Dropped due to no matching log group
+
+# INPUT:
+#  account = 123456789123
+#  log_group_name = example_log_group
+#  log_stream_name = foo_stream
+#  log_content = '{"foo":"bar"}'
+# OUTPUT:
+#  Log Dropped due to no matching sourcetype
+
+# INPUT:
+#  account = 123456789123
+#  log_group_name = example_log_group
+#  log_stream_name = test_stream
+#  log_content = '{"foo":"bar"}'
+# OUTPUT:
+#  Log Dropped due to denylist_regexes
+
+# INPUT:
+#  account = 123456789123
+#  log_group_name = example_log_group
+#  log_stream_name = example_stream
+#  log_content = '{"foo":"bar"}'
+# OUTPUT:
+#  {
+#    "index":"example_index, 
+#    "sourcetype":"example_sourcetype", 
+#     "time": <TIMESTAMP>, 
+#     "host": "<FIREHOSE_ARN>",
+#     "source": "example_log_group",
+#     "fields": {
+#       "aws_account_id": 123456789123,
+#       "cw_log_stream": example_test_stream,
+#     },
+#     "event": {
+#       "foo": "bar"
+#     }
+#  }
+
+# INPUT:
+#  account = 123456789123
+#  log_group_name = example_log_group
+#  log_stream_name = example_stream
+#  log_content = '{"foo":"should be a redact here"}'
+# OUTPUT:
+#  {
+#    "index":"example_index, 
+#    "sourcetype":"example_sourcetype", 
+#     "time": <TIMESTAMP>, 
+#     "host": "<FIREHOSE_ARN>",
+#     "source": "example_log_group",
+#     "fields": {
+#       "aws_account_id": 123456789123,
+#       "cw_log_stream": example_test_stream,
+#     },
+#     "event": {
+#       "foo": "should be a ***REDACTED BY example_sourcetype.redact_regexes.2*** here"
+#     }
+#  }
