@@ -123,6 +123,9 @@ def get_validated_config() -> dict:
     )
     config_yaml: dict = yaml.safe_load(s3_config_file["Body"].read().decode())
 
+    if not config_yaml:
+        raise InvalidConfigException("The supplied config file is empty")
+
     log_group_schema = {
         "accounts": {
             "type": "list",
@@ -142,7 +145,6 @@ def get_validated_config() -> dict:
                     "sourcetype": {
                         "type": "string",
                         "required": True,
-                        "allowed": list(config_yaml.get("sourcetypes", {}).keys()),
                     },
                 },
             },
@@ -169,6 +171,7 @@ def get_validated_config() -> dict:
             "required": True,
         },
     }
+
     v = Validator(schema)
     v.allow_unknown = True
     if not v.validate(config_yaml):
@@ -333,7 +336,7 @@ def process_cloudwatch_log_record(
             )
             return {"result": "Dropped", "recordId": rec_id}
 
-        sourcetype = config["sourcetypes"][sourcetype_name]
+        sourcetype = config.get("sourcetypes", {}).get(sourcetype_name, {})
 
         log_events = [
             event
