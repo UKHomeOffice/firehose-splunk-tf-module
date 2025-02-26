@@ -5,7 +5,7 @@
 groups = ["default", "dev"]
 strategy = ["inherit_metadata"]
 lock_version = "4.5.0"
-content_hash = "sha256:83e29555746a828d1b31de68c5c08df1e9269da26df30617595b9e50d1e3faeb"
+content_hash = "sha256:0190cd9fa96be2d46552767f3d2f8342df378c0b745e30855623b035d4f42f94"
 
 [[metadata.targets]]
 requires_python = "==3.12.*"
@@ -83,15 +83,16 @@ files = [
 
 [[package]]
 name = "cerberus"
-version = "1.3.5"
+version = "1.3.7"
+requires_python = ">=3.7"
 summary = "Lightweight, extensible schema and data validation tool for Pythondictionaries."
 groups = ["default"]
 dependencies = [
     "importlib-metadata; python_version < \"3.8\"",
 ]
 files = [
-    {file = "Cerberus-1.3.5-py3-none-any.whl", hash = "sha256:7649a5815024d18eb7c6aa5e7a95355c649a53aacfc9b050e9d0bf6bfa2af372"},
-    {file = "Cerberus-1.3.5.tar.gz", hash = "sha256:81011e10266ef71b6ec6d50e60171258a5b134d69f8fb387d16e4936d0d47642"},
+    {file = "Cerberus-1.3.7-py3-none-any.whl", hash = "sha256:180e7d1fa1a5765cbff7b5c716e52fddddfab859dc8f625b0d563ace4b7a7ab3"},
+    {file = "cerberus-1.3.7.tar.gz", hash = "sha256:ecf249665400a0b7a9d5e4ee1ffc234fd5d003186d3e1904f70bc14038642c13"},
 ]
 
 [[package]]
