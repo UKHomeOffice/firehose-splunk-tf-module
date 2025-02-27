@@ -322,13 +322,13 @@ def process_eventbridge_event(
 
     if source not in config.get("events", {}):
         logging.info(
-            f"EVENT: Dropping as we cannot locate an event source ({source}) match for it."
+            f"EVENTBRIDGE: Dropping as we cannot locate an event source ({source}) match for it."
         )
         return {"result": "Dropped", "recordId": rec_id}
 
     if int(account_id) not in config["events"][source]["accounts"]:
         logging.info(
-            f"EVENT: Dropping as we cannot locate an event source ({source}) and account_id ({account_id}) match for it."
+            f"EVENTBRIDGE: Dropping as we cannot locate an event source ({source}) and account_id ({account_id}) match for it."
         )
         return {"result": "Dropped", "recordId": rec_id}
 
@@ -342,7 +342,7 @@ def process_eventbridge_event(
 
     if not sourcetype_name:
         logging.info(
-            f"EVENT: Dropping as we cannot locate a sourcetype match for detail_type ({detail_type}) / source ({source})."
+            f"EVENTBRIDGE: Dropping as we cannot locate a sourcetype match for detail_type ({detail_type}) / source ({source})."
         )
         return {"result": "Dropped", "recordId": rec_id}
 
