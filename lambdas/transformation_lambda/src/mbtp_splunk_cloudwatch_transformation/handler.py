@@ -701,7 +701,7 @@ def lambda_handler(event: dict, _context: dict) -> dict:
     reingest_records(record_lists_to_reingest, stream_name)
 
     result_types = ["Ok", "ProcessingFailed", "Dropped"]
-    stats = {x: 0 for x in result_types.extend(["ReingestedSplit", "ReingestedAsIs"])}
+    stats = {x: 0 for x in result_types + ["ReingestedSplit", "ReingestedAsIs"]}
     for record in records:
         for result_type in result_types:
             if record["result"] == result_type:
