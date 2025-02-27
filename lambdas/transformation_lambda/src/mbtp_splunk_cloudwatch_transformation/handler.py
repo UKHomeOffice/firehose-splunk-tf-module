@@ -77,7 +77,7 @@ import json
 import logging
 import re
 from os import environ
-
+from datetime import datetime
 import boto3
 import yaml
 from cerberus import Validator
@@ -349,7 +349,7 @@ def process_eventbridge_event(
     sourcetype = config.get("sourcetypes", {}).get(sourcetype_name, {})
 
     record = transform_event_to_splunk(
-        data["time"],
+        str(datetime.fromisoformat(data["time"]).timestamp()),
         data,
         index,
         sourcetype,
@@ -423,7 +423,7 @@ def process_cloudwatch_log_record(
             for log_event in data["logEvents"]
             if (
                 event := transform_event_to_splunk(
-                    log_event["timestamp"],
+                    str(log_event["timestamp"]),
                     log_event["message"],
                     index,
                     sourcetype,
@@ -701,10 +701,12 @@ def lambda_handler(event: dict, _context: dict) -> dict:
     reingest_records(record_lists_to_reingest, stream_name)
 
     logging.info(
-        "%d input records, %d returned as Ok or ProcessingFailed, %d split and re-ingested, %d re-ingested as-is"
+        "%d input records, %d returned as Ok, %d returned as ProcessingFailed, %d returned as Dropped, %d split and re-ingested, %d re-ingested as-is"
         % (
             len(event["records"]),
-            len([r for r in records if r["result"] != "Dropped"]),
+            len([r for r in records if r["result"] == "Ok"]),
+            len([r for r in records if r["result"] == "ProcessingFailed"]),
+            len([r for r in records if r["result"] == "Dropped"]),
             len([l for l in record_lists_to_reingest if len(l) > 1]),
             len([l for l in record_lists_to_reingest if len(l) == 1]),
         )
