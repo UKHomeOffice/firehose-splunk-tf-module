@@ -360,7 +360,7 @@ def process_eventbridge_event(
     )
     if record:
         return {
-            "data": base64.b64encode(record).decode(),
+            "data": base64.b64encode(record.encode()).decode(),
             "result": "Ok",
             "recordId": rec_id,
         }
