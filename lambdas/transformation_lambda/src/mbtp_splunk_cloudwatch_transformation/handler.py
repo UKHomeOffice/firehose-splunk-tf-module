@@ -358,6 +358,7 @@ def process_eventbridge_event(
         account_id,
         source,
     )
+    logging.info(f"EVENTBRIDGE: {data} - {record}")
     if record:
         return {
             "data": base64.b64encode(record.encode()).decode(),
