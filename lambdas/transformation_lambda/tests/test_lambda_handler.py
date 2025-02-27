@@ -51,7 +51,7 @@ returned = [
     {
         "index": "TEST_INDEX",
         "sourcetype": "TEST_SOURCETYPE",
-        "time": "1510109208016",
+        "time": 1510109208016,
         "host": "ARN/STREAM_NAME",
         "source": "TEST_LOG_GROUP",
         "fields": {
@@ -63,7 +63,7 @@ returned = [
     {
         "index": "TEST_INDEX",
         "sourcetype": "TEST_SOURCETYPE",
-        "time": "1510109208017",
+        "time": 1510109208017,
         "host": "ARN/STREAM_NAME",
         "source": "TEST_LOG_GROUP",
         "fields": {

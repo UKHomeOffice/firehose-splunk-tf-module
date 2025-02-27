@@ -20,7 +20,7 @@ test_configs = [
     ),
     (
         """hello: {}""",
-        True,
+        False,
     ),
     (
         """
@@ -43,6 +43,14 @@ log_groups:
 sourcetypes: {}
 """,
         False,
+    ),
+    (
+        """
+log_groups:
+    LOG_GROUP_NAME: {}
+sourcetypes: {}
+""",
+        True,
     ),
     (
         """

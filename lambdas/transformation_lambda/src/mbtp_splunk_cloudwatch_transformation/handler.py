@@ -126,28 +126,43 @@ def get_validated_config() -> dict:
     if not config_yaml:
         raise InvalidConfigException("The supplied config file is empty")
 
-    log_group_schema = {
-        "accounts": {
+    account_schema = {
+        "type": "list",
+        "schema": {"type": "integer"},
+        "required": True,
+    }
+    index_schema = {"type": "string", "required": True}
+
+    soucetype_list_schema = {
+        "type": "dict",
+        "schema": {
+            "regex": {
+                "type": "string",
+                "required": True,
+            },
+            "sourcetype": {
+                "type": "string",
+                "required": True,
+            },
+        },
+    }
+
+    event_schema = {
+        "accounts": account_schema,
+        "index": index_schema,
+        "detail_types": {
             "type": "list",
-            "schema": {"type": "integer"},
+            "schema": soucetype_list_schema,
             "required": True,
         },
-        "index": {"type": "string", "required": True},
+    }
+
+    log_group_schema = {
+        "accounts": account_schema,
+        "index": index_schema,
         "log_streams": {
             "type": "list",
-            "schema": {
-                "type": "dict",
-                "schema": {
-                    "regex": {
-                        "type": "string",
-                        "required": True,
-                    },
-                    "sourcetype": {
-                        "type": "string",
-                        "required": True,
-                    },
-                },
-            },
+            "schema": soucetype_list_schema,
             "required": True,
         },
     }
@@ -161,14 +176,16 @@ def get_validated_config() -> dict:
             "type": "dict",
             "keysrules": {"type": "string"},
             "valuesrules": {"type": "dict", "schema": sourcetypes_schema},
-            "required": True,
         },
         "log_groups": {
             "type": "dict",
             "keysrules": {"type": "string"},
             "valuesrules": {"type": "dict", "schema": log_group_schema},
-            "dependencies": "sourcetypes",
-            "required": True,
+        },
+        "events": {
+            "type": "dict",
+            "keysrules": {"type": "string"},
+            "valuesrules": {"type": "dict", "schema": event_schema},
         },
     }
 
@@ -204,47 +221,50 @@ def is_json(j: str) -> bool:
 
 
 def load_firehose_record_data(base64_data: str) -> dict:
-    """Converts a b64, gzip compressed string into a dictionary
+    """Converts a b64, optionally gzip compressed, string into a dictionary
 
     Args:
         base64_data (str): Base64 encoded data
 
     Returns:
-        dict: Decoded, decompressed, loaded dictionary
+        dict: Decoded, maybe decompressed, loaded dictionary
     """
-
+    data = base64.b64decode(base64_data)
     try:
-        return json.loads(gzip.decompress(base64.b64decode(base64_data)))
+        return json.loads(gzip.decompress(data))
     except gzip.BadGzipFile:
-        return json.loads(base64.b64decode(base64_data))
+        return json.loads(data)
 
 
-def transform_cloudwatch_log_event(
-    event: dict,
+def transform_event_to_splunk(
+    timestamp: str,
+    event: str | dict,
     index: str,
     sourcetype: dict,
     sourcetype_name: str,
     firehose_arn: str,
     account_id: str,
-    log_group: str,
-    log_stream: str,
+    source: str,
+    log_stream: str | None = None,
 ) -> None | str:
-    """Transforms a CW event into a Splunk one
+    """Transforms an event into a Splunk one
 
     Args:
-        event (dict): Initial event
+        timestamp (str): Event timestamp
+        event (str | dict): Initial event
         index (str): Splunk Index
         sourcetype (dict): Sourcetype object containing regexes
         sourcetype_name (str): Splunk Sourcetype name
         firehose_arn (str): Firehose ARN
         account_id (str): AWS Account ID of the initial log
-        log_group (str): Log group name
-        log_stream (str): Log group stream
+        source (str): Source of the event
+        log_stream (str | None, optional): Log group stream. Defaults to None.
 
     Returns:
         None | str: The processed message or None if we dropped it
     """
-    log = event["message"]
+
+    log = json.dumps(event) if isinstance(event, dict) else event
 
     for deny_regex in sourcetype.get("denylist_regexes", []):
         if re.search(deny_regex, log):
@@ -278,17 +298,73 @@ def transform_cloudwatch_log_event(
     new_log = {
         "index": index,
         "sourcetype": sourcetype_name,
-        "time": str(event["timestamp"]),
+        "time": timestamp,
         "host": firehose_arn,
-        "source": log_group,
+        "source": source,
         "fields": {
             "aws_account_id": account_id,
-            "cw_log_stream": log_stream,
         },
         "event": log,
     }
 
+    if log_stream:
+        new_log["fields"]["cw_log_stream"] = log_stream
+
     return json.dumps(new_log)
+
+
+def process_eventbridge_event(
+    data: dict, rec_id: str, firehose_arn: str, config: dict
+) -> dict:
+    account_id = data["account"]
+    source = data["source"]
+    detail_type = data["detail-type"]
+
+    if source not in config.get("events", {}):
+        logging.info(
+            f"EVENT: Dropping as we cannot locate an event source ({source}) match for it."
+        )
+        return {"result": "Dropped", "recordId": rec_id}
+
+    if int(account_id) not in config["events"][source]["accounts"]:
+        logging.info(
+            f"EVENT: Dropping as we cannot locate an event source ({source}) and account_id ({account_id}) match for it."
+        )
+        return {"result": "Dropped", "recordId": rec_id}
+
+    index = config["events"][source]["index"]
+
+    sourcetype_name = None
+    for sourcetype in config["events"][source]["detail_types"]:
+        if re.match(sourcetype["regex"], detail_type):
+            sourcetype_name = sourcetype["sourcetype"]
+            break
+
+    if not sourcetype_name:
+        logging.info(
+            f"EVENT: Dropping as we cannot locate a sourcetype match for detail_type ({detail_type}) / source ({source})."
+        )
+        return {"result": "Dropped", "recordId": rec_id}
+
+    sourcetype = config.get("sourcetypes", {}).get(sourcetype_name, {})
+
+    record = transform_event_to_splunk(
+        data["time"],
+        data,
+        index,
+        sourcetype,
+        sourcetype_name,
+        firehose_arn,
+        account_id,
+        source,
+    )
+    if record:
+        return {
+            "data": base64.b64encode(record).decode(),
+            "result": "Ok",
+            "recordId": rec_id,
+        }
+    return {"result": "Dropped", "recordId": rec_id}
 
 
 def process_cloudwatch_log_record(
@@ -314,15 +390,15 @@ def process_cloudwatch_log_record(
         log_group = data["logGroup"]
         log_stream = data["logStream"]
 
-        if log_group not in config["log_groups"]:
+        if log_group not in config.get("log_groups", {}):
             logging.info(
-                f"Dropping as we cannot locate a log_group({log_group}) match for it."
+                f"CLOUDWATCH: Dropping as we cannot locate a log_group ({log_group}) match for it."
             )
             return {"result": "Dropped", "recordId": rec_id}
 
         if int(account_id) not in config["log_groups"][log_group]["accounts"]:
             logging.info(
-                f"Dropping as we cannot locate a log_group({log_group}) and account_id({account_id}) match for it."
+                f"CLOUDWATCH: Dropping as we cannot locate a log_group ({log_group}) and account_id ({account_id}) match for it."
             )
             return {"result": "Dropped", "recordId": rec_id}
 
@@ -336,7 +412,7 @@ def process_cloudwatch_log_record(
 
         if not sourcetype_name:
             logging.info(
-                f"Dropping as we cannot locate a sourcetype match for log_stream({log_stream})/log_group({log_group})."
+                f"CLOUDWATCH: Dropping as we cannot locate a sourcetype match for log_stream ({log_stream}) / log_group ({log_group})."
             )
             return {"result": "Dropped", "recordId": rec_id}
 
@@ -346,8 +422,9 @@ def process_cloudwatch_log_record(
             event
             for log_event in data["logEvents"]
             if (
-                event := transform_cloudwatch_log_event(
-                    log_event,
+                event := transform_event_to_splunk(
+                    log_event["timestamp"],
+                    log_event["message"],
                     index,
                     sourcetype,
                     sourcetype_name,
@@ -402,8 +479,7 @@ def process_records(records: list[dict], firehose_arn: str, config: dict) -> lis
             )
         elif set(("source", "detail-type")) <= data.keys():
             # If it's an Eventbridge event record
-            logging.info("EventBridge Log")
-            logging.info(data)
+            process_eventbridge_event(data, rec_id, firehose_arn, config)
         elif set(("index", "sourcetype", "event")) <= data.keys():
             # Else if it's a reingested log which can skip processing
             logging.info(f"Reingested log detected, forwarding it on. {r}")
@@ -618,6 +694,7 @@ def lambda_handler(event: dict, _context: dict) -> dict:
     stream_name = firehose_arn.split("/")[1]
 
     records = process_records(event["records"], firehose_arn, CONFIG)
+    # TODO Reingestion mess
     record_lists_to_reingest = work_out_records_to_reingest(event, records)
     reingest_records(record_lists_to_reingest, stream_name)
 
