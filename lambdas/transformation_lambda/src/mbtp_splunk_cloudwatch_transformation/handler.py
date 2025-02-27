@@ -358,7 +358,6 @@ def process_eventbridge_event(
         account_id,
         source,
     )
-    logging.info(f"EVENTBRIDGE: {data} - {record}")
     if record:
         return {
             "data": base64.b64encode(record.encode()).decode(),
@@ -480,7 +479,9 @@ def process_records(records: list[dict], firehose_arn: str, config: dict) -> lis
             )
         elif set(("source", "detail-type")) <= data.keys():
             # If it's an Eventbridge event record
-            process_eventbridge_event(data, rec_id, firehose_arn, config)
+            returned_records.append(
+                process_eventbridge_event(data, rec_id, firehose_arn, config)
+            )
         elif set(("index", "sourcetype", "event")) <= data.keys():
             # Else if it's a reingested log which can skip processing
             logging.info(f"Reingested log detected, forwarding it on. {r}")
