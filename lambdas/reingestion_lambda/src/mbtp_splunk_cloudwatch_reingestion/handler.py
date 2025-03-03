@@ -10,7 +10,6 @@ import boto3
 import botocore
 
 logger = logging.getLogger()
-logger.setLevel(environ.get("LOG_LEVEL", "INFO"))
 
 
 REQUIRED_ENV_VARS = {

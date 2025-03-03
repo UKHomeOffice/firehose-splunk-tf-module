@@ -6,7 +6,6 @@ from os import environ
 import boto3
 
 logger = logging.getLogger()
-logger.setLevel(environ.get("LOG_LEVEL", "INFO"))
 
 
 REQUIRED_ENV_VARS = {

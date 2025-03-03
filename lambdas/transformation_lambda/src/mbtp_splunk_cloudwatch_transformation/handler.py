@@ -83,7 +83,6 @@ import yaml
 from cerberus import Validator
 
 logger = logging.getLogger()
-logger.setLevel(environ.get("LOG_LEVEL", "INFO"))
 
 REQUIRED_ENV_VARS = {"AWS_REGION", "CONFIG_S3_BUCKET", "CONFIG_S3_KEY"}
 

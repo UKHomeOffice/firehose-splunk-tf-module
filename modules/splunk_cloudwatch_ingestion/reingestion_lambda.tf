@@ -22,8 +22,10 @@ resource "aws_lambda_function" "firehose_lambda_reingestion" {
   memory_size      = var.reingestion_lambda_memory_size
   tags             = var.tags
   logging_config {
-    log_format = "JSON"
-    log_group  = aws_cloudwatch_log_group.reingestion_lambda_logs.name
+    log_format            = "JSON"
+    log_group             = aws_cloudwatch_log_group.reingestion_lambda_logs.name
+    application_log_level = var.reingestion_lambda_log_level
+
   }
   environment {
     variables = {
@@ -31,7 +33,6 @@ resource "aws_lambda_function" "firehose_lambda_reingestion" {
       STREAM_NAME    = local.firehose_stream_name
       RETRIES_PREFIX = var.s3_retries_prefix
       FAILED_PREFIX  = var.s3_failed_prefix
-      LOG_LEVEL      = var.reingestion_lambda_log_level
     }
   }
 }
