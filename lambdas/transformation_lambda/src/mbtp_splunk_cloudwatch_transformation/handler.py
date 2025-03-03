@@ -84,7 +84,6 @@ from cerberus import Validator
 
 logger = logging.getLogger()
 logger.setLevel(environ.get("LOG_LEVEL", "INFO"))
-logger.info(f"Logging at {logger.level}")
 
 REQUIRED_ENV_VARS = {"AWS_REGION", "CONFIG_S3_BUCKET", "CONFIG_S3_KEY"}
 
@@ -714,6 +713,6 @@ def lambda_handler(event: dict, _context: dict) -> dict:
         t = "ReingestedSplit" if len(record) > 1 else "ReingestedAsIs"
         stats[t] += 1
 
-    logger.info({"stats": stats})
+    logger.info("stats", extra={"stats": stats})
 
     return {"records": records}
