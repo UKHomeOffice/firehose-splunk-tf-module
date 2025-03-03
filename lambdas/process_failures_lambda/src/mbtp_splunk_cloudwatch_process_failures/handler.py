@@ -44,7 +44,7 @@ def redrive_dlq_sqs(source_arn: str, dest_arn: str):
         source_arn (str): ARN of the source queue.
         dest_arn (str): ARN of the destination queue.
     """
-    logging.info(f"Initiating DQL redrive from {source_arn} to {dest_arn}")
+    logger.info(f"Initiating DQL redrive from {source_arn} to {dest_arn}")
     sqs_client.start_message_move_task(SourceArn=source_arn, DestinationArn=dest_arn)
 
 
@@ -67,7 +67,7 @@ def reprocess_failed_files(
         for file in page.get("Contents", []):
             key: str = file["Key"]
             new_key = f"{retry_prefix}{key.removeprefix(failed_prefix)}"
-            logging.info(f"Moving {key} to {new_key}")
+            logger.info(f"Moving {key} to {new_key}")
             s3_client.copy_object(
                 Bucket=bucket_name,
                 CopySource={"Bucket": bucket_name, "Key": key},

@@ -65,7 +65,7 @@ def get_records_from_s3(bucket: str, key: str, version_id: str) -> list[str]:
                 record = base64.b64decode(batch["rawData"]).decode()
 
             records.append(record)
-    logging.debug(f"Downloaded {key} and extracted {records}")
+    logger.debug(f"Downloaded {key} and extracted {records}")
     return records
 
 
@@ -80,7 +80,7 @@ def get_logs_from_record(record: str) -> list[dict]:
             i.e. the logs after they were transformed by the transformation lambda.
     """
     logs = [json.loads(log) for log in record.splitlines()]
-    logging.debug(f"Extracted {len(logs)} logs from {record}")
+    logger.debug(f"Extracted {len(logs)} logs from {record}")
     return logs
 
 
@@ -102,10 +102,10 @@ def add_log_to_output_list(
     # and add it to the appropriate list.
     log["fields"]["firehose_errors"] = log["fields"].get("firehose_errors", 0) + 1
     if log["fields"]["firehose_errors"] >= MAX_RETRIES:
-        logging.info(f"Greater than MAX_RETRIES, sending to S3 - {log}")
+        logger.info(f"Greater than MAX_RETRIES, sending to S3 - {log}")
         data_to_s3.append(log)
     else:
-        logging.info(
+        logger.info(
             f"{log["fields"]["firehose_errors"]} is less than MAX_RETRIES, sending to Firehose - {log}"
         )
         data_to_firehose.append(log)
@@ -141,7 +141,7 @@ def send_to_s3(data_to_s3: list[dict], bucket: str, key: str):
     if data_to_s3:
         s3_lines = get_s3_lines(data_to_s3)
         s3_client.put_object(Bucket=bucket, Key=key, Body="\n".join(s3_lines).encode())
-        logging.debug(f"Written file to {bucket}/{key}")
+        logger.debug(f"Written file to {bucket}/{key}")
 
 
 # https://docs.aws.amazon.com/firehose/latest/APIReference/API_PutRecordBatch.html
@@ -193,7 +193,7 @@ def send_to_firehose(
                 predicted_size += record_size
                 records.append(record)
             else:
-                logging.debug(f"Log is too big, adding to S3 instead - {log}")
+                logger.debug(f"Log is too big, adding to S3 instead - {log}")
                 data_to_s3.append(log)
         if records:
             # Catch any leftover records at the end
@@ -217,7 +217,7 @@ def push_to_firehose(
         max_attempts (int, optional): Maximum number of attempts before we give up and put it in S3.
             Defaults to 20.
     """
-    logging.debug(f"Sending {len(records)} to Firehose")
+    logger.debug(f"Sending {len(records)} to Firehose")
 
     failed_records = []
     codes = []
@@ -232,7 +232,7 @@ def push_to_firehose(
     except Exception as e:  # pylint: disable=broad-exception-caught
         failed_records = records
         err_msg = str(e)
-        logging.warning(
+        logger.warning(
             (
                 "Some records failed while calling ",
                 f"PutRecordBatch to Firehose stream, retrying. {err_msg}",
@@ -253,7 +253,7 @@ def push_to_firehose(
     # If any logs failed to process, increase the counter and try sending them again
     if failed_records:
         if attempts_made + 1 < max_attempts:
-            logging.warning(
+            logger.warning(
                 (
                     "Some records failed while calling ",
                     f"PutRecordBatch to Firehose stream, retrying. {err_msg}",
@@ -313,20 +313,20 @@ def lambda_handler(event: dict, _context: dict):
                 continue
 
             # Get the logs from the file and assign them to firehose or S3
-            logging.info(f"Processing {key}")
+            logger.info(f"Processing {key}")
             records = get_records_from_s3(bucket, key, version_id)
             for record in records:
                 for log in get_logs_from_record(record):
                     add_log_to_output_list(log, data_to_firehose, data_to_s3)
 
-            logging.info(f"Processed {bucket}/{key}")
-            logging.info(f"Sending {len(data_to_firehose)} to Firehose")
+            logger.info(f"Processed {bucket}/{key}")
+            logger.info(f"Sending {len(data_to_firehose)} to Firehose")
             send_to_firehose(data_to_firehose, data_to_s3)
 
-            logging.info(f"Sending {len(data_to_s3)} to S3")
+            logger.info(f"Sending {len(data_to_s3)} to S3")
             send_to_s3(
                 data_to_s3, bucket, f"{FAILED_PREFIX}{key.removeprefix(RETRIES_PREFIX)}"
             )
 
-            logging.info(f"Deleting {bucket}/{key}")
+            logger.info(f"Deleting {bucket}/{key}")
             s3_client.delete_object(Bucket=bucket, Key=key, VersionId=version_id)
