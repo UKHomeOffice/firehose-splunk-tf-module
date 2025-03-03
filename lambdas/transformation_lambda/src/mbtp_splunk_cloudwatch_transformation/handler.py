@@ -693,6 +693,8 @@ def lambda_handler(event: dict, _context: dict) -> dict:
         dict: Transformed logs
     """
     logger.debug("Incoming event", extra={"data": event})
+    logger.info(f"Logging level is {logger.level}")
+    logger.debug("Test")
 
     firehose_arn = event["deliveryStreamArn"]
     stream_name = firehose_arn.split("/")[1]
