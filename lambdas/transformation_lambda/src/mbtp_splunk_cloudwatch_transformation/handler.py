@@ -356,6 +356,7 @@ def process_eventbridge_event(
         account_id,
         source,
     )
+    logger.debug("Processed Data", extra={"data": record})
     if record:
         return {
             "data": base64.b64encode(record.encode()).decode(),
@@ -434,6 +435,7 @@ def process_cloudwatch_log_record(
             )
         ]
 
+        logger.debug("Processed Data", extra={"data": log_events})
         return {
             "data": base64.b64encode("\n".join(log_events).encode()).decode(),
             "result": "Ok",
@@ -475,14 +477,18 @@ def process_records(records: list[dict], firehose_arn: str, config: dict) -> lis
 
         if set(("messageType", "logGroup", "owner", "logEvents")) <= data.keys():
             # If it's a Cloudwatch log record
-            returned_records.append(
-                process_cloudwatch_log_record(data, rec_id, firehose_arn, config)
+            processed_record = process_cloudwatch_log_record(
+                data, rec_id, firehose_arn, config
             )
+            logger.debug("Processed record", extra={"data": processed_record})
+            returned_records.append(processed_record)
         elif set(("source", "detail-type")) <= data.keys():
             # If it's an Eventbridge event record
-            returned_records.append(
-                process_eventbridge_event(data, rec_id, firehose_arn, config)
+            processed_record = process_eventbridge_event(
+                data, rec_id, firehose_arn, config
             )
+            logger.debug("Processed record", extra={"data": processed_record})
+            returned_records.append(processed_record)
         elif set(("index", "sourcetype", "event")) <= data.keys():
             # Else if it's a reingested log which can skip processing
             logger.info(f"Reingested log detected, forwarding it on. {r}")
@@ -692,8 +698,6 @@ def lambda_handler(event: dict, _context: dict) -> dict:
         dict: Transformed logs
     """
     logger.debug("Incoming event", extra={"data": event})
-    logger.info(f"Logging level is {logger.level}")
-    logger.debug("Test")
 
     firehose_arn = event["deliveryStreamArn"]
     stream_name = firehose_arn.split("/")[1]
