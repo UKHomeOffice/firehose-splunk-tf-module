@@ -268,7 +268,7 @@ def transform_event_to_splunk(
 
     for deny_regex in sourcetype.get("denylist_regexes", []):
         if re.search(deny_regex, log):
-            logging.info(f"Dropping log due to matching {deny_regex}. Log = {log}")
+            logger.info(f"Dropping log due to matching {deny_regex}. Log = {log}")
             return None
 
     allowed = False
@@ -277,7 +277,7 @@ def transform_event_to_splunk(
             allowed = True
             break
     if not allowed:
-        logging.info(
+        logger.info(
             f"Dropping log because it did not match any allowlist regexes. Log = {log}"
         )
         return None
@@ -321,13 +321,13 @@ def process_eventbridge_event(
     detail_type = data["detail-type"]
 
     if source not in config.get("events", {}):
-        logging.info(
+        logger.info(
             f"EVENTBRIDGE: Dropping as we cannot locate an event source ({source}) match for it."
         )
         return {"result": "Dropped", "recordId": rec_id}
 
     if int(account_id) not in config["events"][source]["accounts"]:
-        logging.info(
+        logger.info(
             f"EVENTBRIDGE: Dropping as we cannot locate an event source ({source}) and account_id ({account_id}) match for it."
         )
         return {"result": "Dropped", "recordId": rec_id}
@@ -341,7 +341,7 @@ def process_eventbridge_event(
             break
 
     if not sourcetype_name:
-        logging.info(
+        logger.info(
             f"EVENTBRIDGE: Dropping as we cannot locate a sourcetype match for detail_type ({detail_type}) / source ({source})."
         )
         return {"result": "Dropped", "recordId": rec_id}
@@ -391,13 +391,13 @@ def process_cloudwatch_log_record(
         log_stream = data["logStream"]
 
         if log_group not in config.get("log_groups", {}):
-            logging.info(
+            logger.info(
                 f"CLOUDWATCH: Dropping as we cannot locate a log_group ({log_group}) match for it."
             )
             return {"result": "Dropped", "recordId": rec_id}
 
         if int(account_id) not in config["log_groups"][log_group]["accounts"]:
-            logging.info(
+            logger.info(
                 f"CLOUDWATCH: Dropping as we cannot locate a log_group ({log_group}) and account_id ({account_id}) match for it."
             )
             return {"result": "Dropped", "recordId": rec_id}
@@ -411,7 +411,7 @@ def process_cloudwatch_log_record(
                 break
 
         if not sourcetype_name:
-            logging.info(
+            logger.info(
                 f"CLOUDWATCH: Dropping as we cannot locate a sourcetype match for log_stream ({log_stream}) / log_group ({log_group})."
             )
             return {"result": "Dropped", "recordId": rec_id}
@@ -470,6 +470,9 @@ def process_records(records: list[dict], firehose_arn: str, config: dict) -> lis
     returned_records = []
     for r in records:
         data = load_firehose_record_data(r["data"])
+        logger.debug("Record", extra={"data": r})
+        logger.debug("Parsed data", extra={"data": data})
+
         rec_id = r["recordId"]
 
         if set(("messageType", "logGroup", "owner", "logEvents")) <= data.keys():
@@ -484,7 +487,7 @@ def process_records(records: list[dict], firehose_arn: str, config: dict) -> lis
             )
         elif set(("index", "sourcetype", "event")) <= data.keys():
             # Else if it's a reingested log which can skip processing
-            logging.info(f"Reingested log detected, forwarding it on. {r}")
+            logger.info(f"Reingested log detected, forwarding it on. {r}")
             returned_records.append(
                 {
                     "data": base64.b64encode(json.dumps(data).encode()).decode(),
@@ -564,7 +567,7 @@ def put_records_to_firehose_stream(
 
     if failed_records:
         if attempts_made + 1 < max_attempts:
-            logging.info(
+            logger.info(
                 f"Some records failed while calling Putrecord_batch to Firehose stream, retrying. {err_msg}"
             )
             put_records_to_firehose_stream(
@@ -613,9 +616,7 @@ def reingest_records(
             # last argument is maxAttempts
             put_records_to_firehose_stream(stream_name, record_batch)
             records_reingested_so_far += len(record_batch)
-            logging.info(
-                f"Reingested {records_reingested_so_far}/{len(flattened_list)}"
-            )
+            logger.info(f"Reingested {records_reingested_so_far}/{len(flattened_list)}")
 
 
 def work_out_records_to_reingest(
@@ -665,7 +666,7 @@ def work_out_records_to_reingest(
             else:
                 # Else if it's just one large message, drop it
                 rec["result"] = "ProcessingFailed"
-                logging.info(
+                logger.info(
                     f"Record {rec["recordId"]} contains only one log event but is still too large after processing ({record_size} bytes), marking it as {rec["result"]}"
                 )
             del rec["data"]
@@ -692,6 +693,8 @@ def lambda_handler(event: dict, _context: dict) -> dict:
     Returns:
         dict: Transformed logs
     """
+    logger.debug("Incoming event", extra={"data": event})
+
     firehose_arn = event["deliveryStreamArn"]
     stream_name = firehose_arn.split("/")[1]
 
@@ -711,6 +714,6 @@ def lambda_handler(event: dict, _context: dict) -> dict:
         t = "ReingestedSplit" if len(record) > 1 else "ReingestedAsIs"
         stats[t] += 1
 
-    logging.info({"stats": stats})
+    logger.info({"stats": stats})
 
     return {"records": records}

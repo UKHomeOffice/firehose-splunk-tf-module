@@ -42,6 +42,7 @@ resource "aws_lambda_function" "firehose_lambda_transformation" {
     variables = {
       CONFIG_S3_BUCKET = var.s3_bucket_name
       CONFIG_S3_KEY    = var.s3_config_file_key
+      LOG_LEVEL        = var.transformation_lambda_log_level
     }
   }
   depends_on = [null_resource.transformation_lambda_exporter]

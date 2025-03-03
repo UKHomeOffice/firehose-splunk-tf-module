@@ -137,6 +137,10 @@ variable "transformation_lambda_memory_size" {
   description = "The function execution memory limit at which Lambda should terminate the function."
   default     = 512
 }
+variable "transformation_lambda_log_level" {
+  description = "Logging level of the lambda function"
+  default     = "INFO"
+}
 
 # Reingestion Lambda
 variable "reingestion_lambda_name" {
@@ -151,6 +155,10 @@ variable "reingestion_lambda_memory_size" {
   description = "The function execution memory limit at which Lambda should terminate the function."
   default     = 512
 }
+variable "reingestion_lambda_log_level" {
+  description = "Logging level of the lambda function"
+  default     = "INFO"
+}
 
 # Process Failures Lambda
 variable "process_failures_lambda_name" {
@@ -164,6 +172,10 @@ variable "process_failures_lambda_timeout" {
 variable "process_failures_lambda_memory_size" {
   description = "The function execution memory limit at which Lambda should terminate the function."
   default     = 256
+}
+variable "process_failures_lambda_log_level" {
+  description = "Logging level of the lambda function"
+  default     = "INFO"
 }
 
 #
