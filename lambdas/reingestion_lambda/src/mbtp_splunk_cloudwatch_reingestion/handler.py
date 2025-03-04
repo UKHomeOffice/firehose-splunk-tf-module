@@ -185,7 +185,6 @@ def send_to_firehose(
                     {"Data": base64.b64encode(compressed_data).decode()}
                 ).encode()
             )
-            logger.debug("Sending to firehose compressed", extra={"data": record})
             # Check that the record/log isn't greater than the max_record_size
             # It shouldn't be as Firehose transformed it before.
             if record_size < max_record_size:
