@@ -224,7 +224,7 @@ def push_to_firehose(
         max_attempts (int, optional): Maximum number of attempts before we give up and put it in S3.
             Defaults to 20.
     """
-    logger.debug(f"Sending {len(records)} to Firehose", extra={"data": records})
+    logger.debug(f"Sending {len(records)} to Firehose")
 
     failed_records = []
     codes = []

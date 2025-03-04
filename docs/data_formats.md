@@ -95,3 +95,65 @@ Once the records are decompressed and converted into Splunk formatted events, th
 Logs that are too large cannot be returned by the transformation lambda.
 
 For large Cloudwatch records, the original Firehose record will be makkred as **Dropped** and the `logEvents` field will be split in half and reingested using the Firehose API.
+
+### Failed Path - Transformation Lambda Failure
+
+If the Transformation Lambda has an error (bad configuration or buggy code) then firehose will place the failed logs in the S3 bucket.
+
+When a file is placed in the bucket, it triggers the Reingestion lambda function.
+
+The Reingestion lambda is triggered with a SQS event with a S3 event inside.
+
+```json
+{
+  "Records": [
+    {
+      "messageId": "c1f6586e-124e-4215-ad4a-62fad29fa267",
+      "receiptHandle": "AQEBWzs1fCIZvV2d2w3WYeURPdcv76SDIP0ou7UH22DZy2Lp+s2udTpyHX85244EmSbA/9Vez7YRzpT7svF74uxkhQrr40UnbPxnqb/xjJ/TbZnIeNfVJjF7z59ycxw0KrfBHkBC48YrOn36M75Icg4g6nCHxC3vDQYGycGFU9By40wdrSE9bwwondjXB++6CbUR0aH1GATqWRez9b1EjANdH2VREiLiDn9zH4kYqJte4pcfpLqU3QAS2IAQnDt3Cb8UZVBBUzL43G2OjfSSJc3/Ls8q+bmabBGwr4IgBnKi3s0hO3HHZy+bAQ2ngGfusqmJ5pveGsK/zV73r4+2egHE2xYJUMnlde7J4LLjsXCiwC0nX3KqiIpvdcYM6KyuliavVIYB+9Jv22Y8o/F+7Ssn+oEUPb2Ev/wBcNm66aARorU=",
+      "body": "{\"Records\":[{\"eventVersion\":\"2.1\",\"eventSource\":\"aws:s3\",\"awsRegion\":\"eu-west-2\",\"eventTime\":\"2025-03-04T11:51:08.487Z\",\"eventName\":\"ObjectCreated:Put\",\"userIdentity\":{\"principalId\":\"AWS:AROARQONGDKK7VF25MK3Y:AWSFirehoseToS3\"},\"requestParameters\":{\"sourceIPAddress\":\"10.63.13.234\"},\"responseElements\":{\"x-amz-request-id\":\"P9QT6CFMQCMKPW0S\",\"x-amz-id-2\":\"f2eHarD4SXSGYZyh35nY4ijYhl5ge6aVuyedtjJ+Y1ZrZIZ7ReqUu1+8E/osMHDbxGRxNtlb/I8wWb7+QBySe4PP9rLRGJh6\"},\"s3\":{\"s3SchemaVersion\":\"1.0\",\"configurationId\":\"tf-s3-queue-20250303142857274500000006\",\"bucket\":{\"name\":\"ew2.ho.it.np.sec.splunk-firehose\",\"ownerIdentity\":{\"principalId\":\"AIRAEMCN28RPY\"},\"arn\":\"arn:aws:s3:::ew2.ho.it.np.sec.splunk-firehose\"},\"object\":{\"key\":\"ho-it-sec-test/retries/processing-failed/2025/03/04/11/ho-it-sec-test-fh-cw2splunk-9-2025-03-04-11-48-32-c7cc019b-af51-412d-b641-b3b44ceb3d87\",\"size\":677,\"eTag\":\"d51acdfdb2f835debf14d4ee9a271ecc\",\"versionId\":\"9PkggzWYCsWgaiuTj6g8yqel5BJQO_SL\",\"sequencer\":\"0067C6E92C64732325\"}}}]}",
+      "attributes": {
+        "ApproximateReceiveCount": "1",
+        "SentTimestamp": "1741089069412",
+        "SenderId": "AROA5LVVW55647YN4KVPZ:S3-PROD-END",
+        "ApproximateFirstReceiveTimestamp": "1741089129412"
+      },
+      "messageAttributes": {},
+      "md5OfBody": "474daf6cbf272edf12bc7932ab08c8fd",
+      "eventSource": "aws:sqs",
+      "eventSourceARN": "arn:aws:sqs:eu-west-2:104046402197:ho-it-sec-test-cw2splunk-retry-sqs",
+      "awsRegion": "eu-west-2"
+    }
+  ]
+}
+```
+
+The file is downloaded from S3 using the object details in the `body` of the SQS message.
+
+The file's content which was populated by firehose contains a JSON string. Multiple events can be within the same file on different lines.
+
+The `rawData` field is a Base64 and Gzip compressed JSON string of the oringinal firehose record.
+
+```json
+"{\"rawData\":\"H4sIAAAAAAAA/4WQS2uDQACE/8ucFfblvm5CbU49mVsNwditXaquuGtDEf97SUKhtx5nmG8GZsPoYmx7d/yeHSyeymN5fqnqujxUyBCuk1tgQYkgQgrCqFHIMIT+sIR1hsVHyH3Ko+vy5GLKuyuL87BOn3fpp/6RrtPi2hEWN/ccHypDXC+xW/ycfJie/ZDcEmFf/+3M/3I43ReqLzelG73Bv8GCa81UoQkjVGsiCs6JNEYaZjiXwhTcEGIkU5JoapiiQilhuJLIkPzoYmrHGZYqQYnWhjLOafb7FSy2Bu8hNLANLu3SYMd+2n8AV7S7kU0BAAA=\",\"errorCode\":\"Lambda.FunctionError\",\"errorMessage\":\"The Lambda function was successfully invoked but it returned an error result.\",\"attemptsMade\":4,\"arrivalTimestamp\":1741088912364,\"attemptEndingTimestamp\":1741089007666,\"lambdaARN\":\"arn:aws:lambda:eu-west-2:104046402197:function:ho-it-sec-test-cw2splunk-transformation-lambda:$LATEST\"}"
+```
+
+After processing the `rawData` field, we get:
+
+```json
+{
+  "messageType": "DATA_MESSAGE",
+  "owner": "104046402197",
+  "logGroup": "ho-it-sec-test-cw2splunk-testing",
+  "logStream": "test_stream",
+  "subscriptionFilters": ["ho-it-sec-test-cw2splunk-testing-subscription"],
+  "logEvents": [
+    {
+      "id": "38827580201880453306996929336495390096276081927147749376",
+      "timestamp": 1741088912331,
+      "message": "{\"foo\":\"bar\"}"
+    }
+  ]
+}
+```
+
+This record is sent back
