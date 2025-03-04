@@ -54,7 +54,10 @@ def get_records_from_s3(bucket: str, key: str, version_id: str) -> list[str]:
     # Grab the file from S3 and loop through the lines in it
     s3_file = s3_client.get_object(Bucket=bucket, Key=key, VersionId=version_id)
     records = []
-    for line in s3_file["Body"].read().decode().splitlines():
+    s3_file_data = s3_file["Body"].read().decode()
+    logger.debug("S3 file data", extra={"data": s3_file_data})
+
+    for line in s3_file_data.splitlines():
         if line.strip():
             # Parse the line as JSON, extract the rawData and b64 decode it
             batch = json.loads(line)
@@ -65,6 +68,7 @@ def get_records_from_s3(bucket: str, key: str, version_id: str) -> list[str]:
 
             records.append(record)
     logger.debug(f"Downloaded {key} and extracted {records}")
+    logger.debug("S3 parsed data", extra={"data": records})
     return records
 
 
@@ -79,7 +83,7 @@ def get_logs_from_record(record: str) -> list[dict]:
             i.e. the logs after they were transformed by the transformation lambda.
     """
     logs = [json.loads(log) for log in record.splitlines()]
-    logger.debug(f"Extracted {len(logs)} logs from {record}")
+    logger.debug("Extracted logs from record", extra={"data": logs})
     return logs
 
 
@@ -138,8 +142,10 @@ def send_to_s3(data_to_s3: list[dict], bucket: str, key: str):
         key (str): Key to save them to.
     """
     if data_to_s3:
-        s3_lines = get_s3_lines(data_to_s3)
-        s3_client.put_object(Bucket=bucket, Key=key, Body="\n".join(s3_lines).encode())
+        logger.debug(f"Sending data to S3", extra={"data": data_to_s3})
+        s3_lines = "\n".join(get_s3_lines(data_to_s3)).encode()
+        logger.debug(f"Sending lines to S3", extra={"data": s3_lines})
+        s3_client.put_object(Bucket=bucket, Key=key, Body=s3_lines)
         logger.debug(f"Written file to {bucket}/{key}")
 
 
@@ -170,6 +176,8 @@ def send_to_firehose(
         for log in data_to_firehose:
             # Compress the log with GZIP so we can process it the same as the
             # Cloudwatch logs when we receive it back on the transformation lambda.
+            logger.debug("Sending to firehose", extra={"data": log})
+
             compressed_data = gzip.compress(json.dumps(log).encode())
             record = {"Data": compressed_data}
             record_size = len(
@@ -177,6 +185,7 @@ def send_to_firehose(
                     {"Data": base64.b64encode(compressed_data).decode()}
                 ).encode()
             )
+            logger.debug("Sending to firehose compressed", extra={"data": record})
             # Check that the record/log isn't greater than the max_record_size
             # It shouldn't be as Firehose transformed it before.
             if record_size < max_record_size:
@@ -216,7 +225,7 @@ def push_to_firehose(
         max_attempts (int, optional): Maximum number of attempts before we give up and put it in S3.
             Defaults to 20.
     """
-    logger.debug(f"Sending {len(records)} to Firehose")
+    logger.debug(f"Sending {len(records)} to Firehose", extra={"data": records})
 
     failed_records = []
     codes = []
@@ -296,6 +305,8 @@ def lambda_handler(event: dict, _context: dict):
         event (dict): SQS Event from AWS
         _context (dict): Lambda execution context - not used.
     """
+    logger.debug("Incoming event", extra={"data": event})
+
     # https://docs.aws.amazon.com/lambda/latest/dg/with-sqs.html#example-standard-queue-message-event
     for sqs_record in event["Records"]:
         s3_event = json.loads(sqs_record["body"])
