@@ -308,10 +308,10 @@ def lambda_handler(event: dict, _context: dict):
     logger.debug("Incoming event", extra={"data": event})
 
     # https://docs.aws.amazon.com/lambda/latest/dg/with-sqs.html#example-standard-queue-message-event
-    for sqs_record in event["Records"]:
-        s3_event = json.loads(sqs_record["body"])
+    for sqs_record in event.get("Records", []):
+        s3_event = json.loads(sqs_record.get("body", {}))
         # https://docs.aws.amazon.com/AmazonS3/latest/userguide/notification-content-structure.html
-        for s3_record in s3_event["Records"]:
+        for s3_record in s3_event.get("Records", []):
             data_to_s3: list[dict] = []
             data_to_firehose: list[dict] = []
 
