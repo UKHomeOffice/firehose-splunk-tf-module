@@ -218,6 +218,25 @@ def is_json(j: str) -> bool:
     return True
 
 
+def get_record_type(data: dict) -> str | None:
+    """Takes data from a firehose record and works out what type of event it is
+
+    Args:
+        data (dict): Firehose record data
+
+    Returns:
+        str | None: Type of record
+    """
+    keys = data.keys()
+    if set(("messageType", "logGroup", "owner", "logEvents")) <= keys:
+        return "cloudwatch"
+    elif set(("source", "detail-type")) <= keys:
+        return "eventbridge"
+    elif set(("index", "sourcetype", "event")) <= keys:
+        return "splunk"
+    return None
+
+
 def load_firehose_record_data(base64_data: str) -> dict:
     """Converts a b64, optionally gzip compressed, string into a dictionary
 
@@ -475,21 +494,22 @@ def process_records(records: list[dict], firehose_arn: str, config: dict) -> lis
 
         rec_id = r["recordId"]
 
-        if set(("messageType", "logGroup", "owner", "logEvents")) <= data.keys():
+        record_type = get_record_type(data)
+        if record_type == "cloudwatch":
             # If it's a Cloudwatch log record
             processed_record = process_cloudwatch_log_record(
                 data, rec_id, firehose_arn, config
             )
             logger.debug("Processed record", extra={"data": processed_record})
             returned_records.append(processed_record)
-        elif set(("source", "detail-type")) <= data.keys():
+        elif record_type == "eventbridge":
             # If it's an Eventbridge event record
             processed_record = process_eventbridge_event(
                 data, rec_id, firehose_arn, config
             )
             logger.debug("Processed record", extra={"data": processed_record})
             returned_records.append(processed_record)
-        elif set(("index", "sourcetype", "event")) <= data.keys():
+        elif record_type == "splunk":
             # Else if it's a reingested log which can skip processing
             logger.info(f"Reingested log detected, forwarding it on. {r}")
             returned_records.append(
@@ -657,21 +677,28 @@ def work_out_records_to_reingest(
         # We shouldn't get any processed reingested logs hitting this as they will be less than 6MB (reingestion already checked that)
         if record_size > max_return_size:
             # Reload original data
-            cwl_record = load_firehose_record_data(original_record["data"])
-            # If there is more than one log event, split log events in half and re-process
-            if len(cwl_record.get("logEvents", [])) > 1:
-                rec["result"] = "Dropped"
-                record_lists_to_reingest.append(
-                    [
-                        create_reingestion_record(original_record, data)
-                        for data in split_cwl_record(cwl_record)
-                    ]
-                )
+            record_data = load_firehose_record_data(original_record["data"])
+            record_type = get_record_type(record_data)
+            if record_type == "cloudwatch":
+                # If there is more than one log event, split log events in half and re-process
+                if len(record_data.get("logEvents", [])) > 1:
+                    rec["result"] = "Dropped"
+                    record_lists_to_reingest.append(
+                        [
+                            create_reingestion_record(original_record, data)
+                            for data in split_cwl_record(record_data)
+                        ]
+                    )
+                else:
+                    # Else if it's just one large message, drop it
+                    rec["result"] = "ProcessingFailed"
+                    logger.info(
+                        f"Record {rec["recordId"]} contains only one log event but is still too large after processing ({record_size} bytes), marking it as {rec["result"]}"
+                    )
             else:
-                # Else if it's just one large message, drop it
                 rec["result"] = "ProcessingFailed"
-                logger.info(
-                    f"Record {rec["recordId"]} contains only one log event but is still too large after processing ({record_size} bytes), marking it as {rec["result"]}"
+                logging.info(
+                    f"A large record of type {record_type} tried to be split but couldn't."
                 )
             del rec["data"]
         else:
@@ -703,7 +730,6 @@ def lambda_handler(event: dict, _context: dict) -> dict:
     stream_name = firehose_arn.split("/")[1]
 
     records = process_records(event["records"], firehose_arn, CONFIG)
-    # TODO Reingestion mess
     record_lists_to_reingest = work_out_records_to_reingest(event, records)
     reingest_records(record_lists_to_reingest, stream_name)
 
