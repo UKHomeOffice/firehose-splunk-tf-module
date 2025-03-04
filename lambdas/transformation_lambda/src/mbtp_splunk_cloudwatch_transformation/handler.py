@@ -720,4 +720,6 @@ def lambda_handler(event: dict, _context: dict) -> dict:
 
     logger.info("stats", extra={"stats": stats})
 
+    logger.debug("Outgoing event", extra={"data": {"records": records}})
+
     return {"records": records}
