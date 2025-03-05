@@ -156,4 +156,28 @@ After processing the `rawData` field, we get:
 }
 ```
 
-This record is sent back
+This record is sent back into Firehose, but has a `firehose_errors` field applied:
+
+```json
+{
+  "messageType": "DATA_MESSAGE",
+  "owner": "104046402197",
+  "logGroup": "ho-it-sec-test-cw2splunk-testing",
+  "logStream": "test_stream",
+  "subscriptionFilters": ["ho-it-sec-test-cw2splunk-testing-subscription"],
+  "logEvents": [
+    {
+      "id": "38827580201880453306996929336495390096276081927147749376",
+      "timestamp": 1741088912331,
+      "message": "{\"foo\":\"bar\"}"
+    }
+  ],
+  "fields": {
+    "firehose_errors": 1
+  }
+}
+```
+
+Once the `firehose_errors` goes over the threshold (3 by default), the event will be placed in the S3 bucket.
+
+The message in the bucket is in the same format as it was when Firehose sent it in originally, but it has the `firehose_errors` field removed so that when it's next processed it does not automatically go back to failures.

@@ -143,9 +143,9 @@ def send_to_s3(data_to_s3: list[dict], bucket: str, key: str):
     """
     if data_to_s3:
         logger.debug(f"Sending data to S3", extra={"data": data_to_s3})
-        s3_lines = "\n".join(get_s3_lines(data_to_s3)).encode()
+        s3_lines = "\n".join(get_s3_lines(data_to_s3))
         logger.debug(f"Sending lines to S3", extra={"data": s3_lines})
-        s3_client.put_object(Bucket=bucket, Key=key, Body=s3_lines)
+        s3_client.put_object(Bucket=bucket, Key=key, Body=s3_lines.encode())
         logger.debug(f"Written file to {bucket}/{key}")
 
 
