@@ -22,7 +22,7 @@ sourcetypes:
       - redact
 
 events:
-  example_event_source:
+  example_event_source: # e.g. aws.tag
     accounts:
       - 123456789123
     index: example_index

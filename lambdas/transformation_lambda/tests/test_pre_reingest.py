@@ -117,7 +117,7 @@ def test_work_out_records_to_reingest_multiple_too_big():
     assert "data" not in records[0]
 
 
-def test_work_out_records_to_reingest_too_big_not_cloudwatch():
+def test_work_out_records_to_reingest_large_non_cloudwatch():
     data = {"index": "foo", "sourcetype": "bar", "event": {}}
 
     event = {
