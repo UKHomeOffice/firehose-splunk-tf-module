@@ -3,7 +3,9 @@ import gzip
 import json
 from src.mbtp_splunk_cloudwatch_transformation.handler import (
     get_record_size,
+    get_record_type,
     process_cloudwatch_log_record,
+    process_eventbridge_event,
     process_records,
     split_cwl_record,
 )
@@ -18,7 +20,16 @@ config = {
             ],
         }
     },
-    "sourcetypes": {"TEST_SOURCETYPE": {}},
+    "sourcetypes": {"TEST_SOURCETYPE": {"denylist_regexes": ["DROPME"]}},
+    "events": {
+        "aws.tag": {
+            "accounts": [123456789012],
+            "index": "TEST_INDEX",
+            "detail_types": [
+                {"regex": "Tag Change on .*", "sourcetype": "TEST_SOURCETYPE"}
+            ],
+        }
+    },
 }
 data = {
     "messageType": "DATA_MESSAGE",
@@ -140,7 +151,7 @@ def test_get_record_size():
     assert get_record_size({"foo": "bar"}) == 14
 
 
-def test_process_records():
+def test_process_records_cloudwatch():
     compressed_data = base64.b64encode(gzip.compress(json.dumps(data).encode()))
     test_records = [{"data": compressed_data, "recordId": "1"}]
     reingest_data = {
@@ -216,4 +227,229 @@ def test_split_cwl_record():
 
     assert split_cwl_record(data) == [
         gzip.compress(json.dumps(r).encode()) for r in result
+    ]
+
+
+def test_get_record_type():
+    assert (
+        get_record_type(
+            {
+                "messageType": "foo",
+                "logGroup": "foo",
+                "owner": "bar",
+                "logEvents": "bar",
+                "one": "more",
+            }
+        )
+    ) == "cloudwatch"
+
+    assert (
+        get_record_type(
+            {
+                "source": "foo",
+                "detail-type": "bar",
+                "one": "more",
+            }
+        )
+    ) == "eventbridge"
+
+    assert (
+        get_record_type(
+            {
+                "index": "foo",
+                "sourcetype": "bar",
+                "event": "bar",
+                "one": "more",
+            }
+        )
+    ) == "splunk"
+
+    assert (get_record_type({"one": "more"})) == None
+
+
+def test_process_eventbridge_event_good():
+    test_data = {
+        "version": "0",
+        "id": "0",
+        "detail-type": "Tag Change on Resource",
+        "source": "aws.tag",
+        "account": "123456789012",
+        "time": "2025-03-05T11:05:23Z",
+        "region": "eu-west-2",
+        "resources": ["example:arn"],
+        "detail": {
+            "changed-tag-keys": ["example"],
+            "service": "eks",
+            "tag-policy-compliant": "true",
+            "resource-type": "pod",
+            "version-timestamp": "1741172723640",
+            "version": 1,
+            "tags": {"example": "foo"},
+        },
+    }
+    expected_result = {
+        "data": base64.b64encode(
+            json.dumps(
+                {
+                    "index": "TEST_INDEX",
+                    "sourcetype": "TEST_SOURCETYPE",
+                    "time": "1741172723.0",
+                    "host": "ARN",
+                    "source": "aws.tag",
+                    "fields": {"aws_account_id": "123456789012"},
+                    "event": test_data,
+                }
+            ).encode()
+        ).decode(),
+        "result": "Ok",
+        "recordId": "123",
+    }
+    assert process_eventbridge_event(test_data, "123", "ARN", config) == expected_result
+
+
+def test_process_eventbridge_event_unknown_source():
+    test_data = {
+        "version": "0",
+        "id": "0",
+        "detail-type": "Tag Change on Resource",
+        "source": "aws.cheese",
+        "account": "123456789012",
+        "time": "2025-03-05T11:05:23Z",
+        "region": "eu-west-2",
+        "resources": ["example:arn"],
+        "detail": {
+            "changed-tag-keys": ["example"],
+            "service": "eks",
+            "tag-policy-compliant": "true",
+            "resource-type": "pod",
+            "version-timestamp": "1741172723640",
+            "version": 1,
+            "tags": {"example": "foo"},
+        },
+    }
+    assert process_eventbridge_event(test_data, "123", "ARN", config) == {
+        "result": "Dropped",
+        "recordId": "123",
+    }
+
+
+def test_process_eventbridge_event_unknown_detail():
+    test_data = {
+        "version": "0",
+        "id": "0",
+        "detail-type": "blah",
+        "source": "aws.tag",
+        "account": "123456789012",
+        "time": "2025-03-05T11:05:23Z",
+        "region": "eu-west-2",
+        "resources": ["example:arn"],
+        "detail": {
+            "changed-tag-keys": ["example"],
+            "service": "eks",
+            "tag-policy-compliant": "true",
+            "resource-type": "pod",
+            "version-timestamp": "1741172723640",
+            "version": 1,
+            "tags": {"example": "foo"},
+        },
+    }
+    assert process_eventbridge_event(test_data, "123", "ARN", config) == {
+        "result": "Dropped",
+        "recordId": "123",
+    }
+
+
+def test_process_eventbridge_event_unknown_account():
+    test_data = {
+        "version": "0",
+        "id": "0",
+        "detail-type": "Tag Change on Resource",
+        "source": "aws.tag",
+        "account": "123456000000",
+        "time": "2025-03-05T11:05:23Z",
+        "region": "eu-west-2",
+        "resources": ["example:arn"],
+        "detail": {
+            "changed-tag-keys": ["example"],
+            "service": "eks",
+            "tag-policy-compliant": "true",
+            "resource-type": "pod",
+            "version-timestamp": "1741172723640",
+            "version": 1,
+            "tags": {"example": "foo"},
+        },
+    }
+    assert process_eventbridge_event(test_data, "123", "ARN", config) == {
+        "result": "Dropped",
+        "recordId": "123",
+    }
+
+
+def test_process_eventbridge_event_dropped_regex():
+    test_data = {
+        "version": "0",
+        "id": "0",
+        "detail-type": "Tag Change on Resource",
+        "source": "aws.tag",
+        "account": "123456789012",
+        "time": "2025-03-05T11:05:23Z",
+        "region": "eu-west-2",
+        "resources": ["example:arn"],
+        "detail": {
+            "changed-tag-keys": ["example"],
+            "service": "eks",
+            "tag-policy-compliant": "true",
+            "resource-type": "pod",
+            "version-timestamp": "1741172723640",
+            "version": 1,
+            "tags": {"example": "DROPME"},
+        },
+    }
+    assert process_eventbridge_event(test_data, "123", "ARN", config) == {
+        "result": "Dropped",
+        "recordId": "123",
+    }
+
+
+def test_process_records_eventbridge():
+    test_data = {
+        "version": "0",
+        "id": "0",
+        "detail-type": "Tag Change on Resource",
+        "source": "aws.tag",
+        "account": "123456789012",
+        "time": "2025-03-05T11:05:23Z",
+        "region": "eu-west-2",
+        "resources": ["example:arn"],
+        "detail": {
+            "changed-tag-keys": ["example"],
+            "service": "eks",
+            "tag-policy-compliant": "true",
+            "resource-type": "pod",
+            "version-timestamp": "1741172723640",
+            "version": 1,
+            "tags": {"example": "foo"},
+        },
+    }
+    input_data = base64.b64encode(json.dumps(test_data).encode())
+    test_records = [{"data": input_data, "recordId": "1"}]
+
+    assert process_records(test_records, "ARN", config) == [
+        {
+            "result": "Ok",
+            "recordId": "1",
+            "data": base64.b64encode(
+                json.dumps(
+                    {
+                        "index": "TEST_INDEX",
+                        "sourcetype": "TEST_SOURCETYPE",
+                        "time": "1741172723.0",
+                        "host": "ARN",
+                        "source": "aws.tag",
+                        "fields": {"aws_account_id": "123456789012"},
+                        "event": test_data,
+                    }
+                ).encode()
+            ).decode(),
+        }
     ]

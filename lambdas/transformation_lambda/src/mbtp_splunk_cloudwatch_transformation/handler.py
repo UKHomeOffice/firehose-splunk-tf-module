@@ -714,6 +714,30 @@ def work_out_records_to_reingest(
     return record_lists_to_reingest
 
 
+def get_stats(records: list, record_lists_to_reingest: list) -> dict:
+    """Takes the processed records and generates some output stats
+
+    Args:
+        records (list): Processed records
+        record_lists_to_reingest (list): List of records that need reingesting.
+
+    Returns:
+        dict: Returned stats object
+    """
+    result_types = ["Ok", "ProcessingFailed", "Dropped"]
+    stats = {x: 0 for x in result_types + ["ReingestedSplit", "ReingestedAsIs"]}
+    for record in records:
+        for result_type in result_types:
+            if record["result"] == result_type:
+                stats[result_type] += 1
+
+    for record in record_lists_to_reingest:
+        t = "ReingestedSplit" if len(record) > 1 else "ReingestedAsIs"
+        stats[t] += 1
+
+    return stats
+
+
 def lambda_handler(event: dict, _context: dict) -> dict:
     """Lambda function to transform Cloudwatch logs and Eventbridge events to Splunk HEC events.
 
@@ -733,17 +757,7 @@ def lambda_handler(event: dict, _context: dict) -> dict:
     record_lists_to_reingest = work_out_records_to_reingest(event, records)
     reingest_records(record_lists_to_reingest, stream_name)
 
-    result_types = ["Ok", "ProcessingFailed", "Dropped"]
-    stats = {x: 0 for x in result_types + ["ReingestedSplit", "ReingestedAsIs"]}
-    for record in records:
-        for result_type in result_types:
-            if record["result"] == result_type:
-                stats[result_type] += 1
-
-    for record in record_lists_to_reingest:
-        t = "ReingestedSplit" if len(record) > 1 else "ReingestedAsIs"
-        stats[t] += 1
-
+    stats = get_stats(records, record_lists_to_reingest)
     logger.info("stats", extra={"stats": stats})
 
     logger.debug("Outgoing event", extra={"data": {"records": records}})

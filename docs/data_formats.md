@@ -4,14 +4,12 @@
 
 ### Successful Path
 
-#### Transformation Lambda
-
-Logs from Cloudwatch are submitted to the transformation lambda as batches of compressed logs. The triggering event in the `handler` function is in the following format:
+Logs from Cloudwatch are submitted to the Transformation lambda as batches of compressed logs. The triggering event in the `handler` function is in the following format:
 
 ```json
 {
   "invocationId": "7aadc5cf-37dd-41e3-b554-18037ca12014",
-  "deliveryStreamArn": "arn:aws:firehose:eu-west-2:104046402197:deliverystream/ho-it-sec-test-fh-cw2splunk",
+  "deliveryStreamArn": "arn:aws:firehose:eu-west-2:000000000000:deliverystream/fh-cw2splunk",
   "region": "eu-west-2",
   "records": [
     {
@@ -33,10 +31,10 @@ The `data` field in each `record` is a Base64 encoded string which has also been
 ```json
 {
   "messageType": "DATA_MESSAGE",
-  "owner": "104046402197",
-  "logGroup": "ho-it-sec-test-cw2splunk-testing",
+  "owner": "000000000000",
+  "logGroup": "cw2splunk-testing",
   "logStream": "test_stream",
-  "subscriptionFilters": ["ho-it-sec-test-cw2splunk-testing-subscription"],
+  "subscriptionFilters": ["cw2splunk-testing-subscription"],
   "logEvents": [
     {
       "id": "38827321643539404546782904522408409000591431269157240832",
@@ -55,8 +53,8 @@ The `data` field in each `record` is a Base64 encoded string which has also been
 Once the log has been processed, it is returned as a JSON string. If there are multiple `logEvents` in the array, they will be strings separated by a new line. If the logs are dropped by the `deny_regex` they will be excluded from the response here.
 
 ```json
-"{\"index\": \"mbtp_secopsit_testenv_ops\", \"sourcetype\": \"_json\", \"time\": \"1741077318174\", \"host\": \"arn:aws:firehose:eu-west-2:104046402197:deliverystream/ho-it-sec-test-fh-cw2splunk\", \"source\": \"ho-it-sec-test-cw2splunk-testing\", \"fields\": {\"aws_account_id\": \"104046402197\", \"cw_log_stream\": \"test_stream\"}, \"event\": {\"foo\": \"bar\"}}
-{\"index\": \"mbtp_secopsit_testenv_ops\", \"sourcetype\": \"_json\", \"time\": \"1741077318175\", \"host\": \"arn:aws:firehose:eu-west-2:104046402197:deliverystream/ho-it-sec-test-fh-cw2splunk\", \"source\": \"ho-it-sec-test-cw2splunk-testing\", \"fields\": {\"aws_account_id\": \"104046402197\", \"cw_log_stream\": \"test_stream\"}, \"event\": {\"foo\": \"bar2\"}}"
+"{\"index\": \"mbtp_secopsit_testenv_ops\", \"sourcetype\": \"_json\", \"time\": \"1741077318174\", \"host\": \"arn:aws:firehose:eu-west-2:000000000000:deliverystream/fh-cw2splunk\", \"source\": \"cw2splunk-testing\", \"fields\": {\"aws_account_id\": \"000000000000\", \"cw_log_stream\": \"test_stream\"}, \"event\": {\"foo\": \"bar\"}}
+{\"index\": \"mbtp_secopsit_testenv_ops\", \"sourcetype\": \"_json\", \"time\": \"1741077318175\", \"host\": \"arn:aws:firehose:eu-west-2:000000000000:deliverystream/fh-cw2splunk\", \"source\": \"cw2splunk-testing\", \"fields\": {\"aws_account_id\": \"000000000000\", \"cw_log_stream\": \"test_stream\"}, \"event\": {\"foo\": \"bar2\"}}"
 ```
 
 The result is then Base64 encoded and put into a firehose record:
@@ -110,7 +108,7 @@ The Reingestion lambda is triggered with a SQS event with a S3 event inside.
     {
       "messageId": "c1f6586e-124e-4215-ad4a-62fad29fa267",
       "receiptHandle": "AQEBWzs1fCIZvV2d2w3WYeURPdcv76SDIP0ou7UH22DZy2Lp+s2udTpyHX85244EmSbA/9Vez7YRzpT7svF74uxkhQrr40UnbPxnqb/xjJ/TbZnIeNfVJjF7z59ycxw0KrfBHkBC48YrOn36M75Icg4g6nCHxC3vDQYGycGFU9By40wdrSE9bwwondjXB++6CbUR0aH1GATqWRez9b1EjANdH2VREiLiDn9zH4kYqJte4pcfpLqU3QAS2IAQnDt3Cb8UZVBBUzL43G2OjfSSJc3/Ls8q+bmabBGwr4IgBnKi3s0hO3HHZy+bAQ2ngGfusqmJ5pveGsK/zV73r4+2egHE2xYJUMnlde7J4LLjsXCiwC0nX3KqiIpvdcYM6KyuliavVIYB+9Jv22Y8o/F+7Ssn+oEUPb2Ev/wBcNm66aARorU=",
-      "body": "{\"Records\":[{\"eventVersion\":\"2.1\",\"eventSource\":\"aws:s3\",\"awsRegion\":\"eu-west-2\",\"eventTime\":\"2025-03-04T11:51:08.487Z\",\"eventName\":\"ObjectCreated:Put\",\"userIdentity\":{\"principalId\":\"AWS:AROARQONGDKK7VF25MK3Y:AWSFirehoseToS3\"},\"requestParameters\":{\"sourceIPAddress\":\"10.63.13.234\"},\"responseElements\":{\"x-amz-request-id\":\"P9QT6CFMQCMKPW0S\",\"x-amz-id-2\":\"f2eHarD4SXSGYZyh35nY4ijYhl5ge6aVuyedtjJ+Y1ZrZIZ7ReqUu1+8E/osMHDbxGRxNtlb/I8wWb7+QBySe4PP9rLRGJh6\"},\"s3\":{\"s3SchemaVersion\":\"1.0\",\"configurationId\":\"tf-s3-queue-20250303142857274500000006\",\"bucket\":{\"name\":\"ew2.ho.it.np.sec.splunk-firehose\",\"ownerIdentity\":{\"principalId\":\"AIRAEMCN28RPY\"},\"arn\":\"arn:aws:s3:::ew2.ho.it.np.sec.splunk-firehose\"},\"object\":{\"key\":\"ho-it-sec-test/retries/processing-failed/2025/03/04/11/ho-it-sec-test-fh-cw2splunk-9-2025-03-04-11-48-32-c7cc019b-af51-412d-b641-b3b44ceb3d87\",\"size\":677,\"eTag\":\"d51acdfdb2f835debf14d4ee9a271ecc\",\"versionId\":\"9PkggzWYCsWgaiuTj6g8yqel5BJQO_SL\",\"sequencer\":\"0067C6E92C64732325\"}}}]}",
+      "body": "{\"Records\":[{\"eventVersion\":\"2.1\",\"eventSource\":\"aws:s3\",\"awsRegion\":\"eu-west-2\",\"eventTime\":\"2025-03-04T11:51:08.487Z\",\"eventName\":\"ObjectCreated:Put\",\"userIdentity\":{\"principalId\":\"AWS:AROARQONGDKK7VF25MK3Y:AWSFirehoseToS3\"},\"requestParameters\":{\"sourceIPAddress\":\"10.63.13.234\"},\"responseElements\":{\"x-amz-request-id\":\"P9QT6CFMQCMKPW0S\",\"x-amz-id-2\":\"f2eHarD4SXSGYZyh35nY4ijYhl5ge6aVuyedtjJ+Y1ZrZIZ7ReqUu1+8E/osMHDbxGRxNtlb/I8wWb7+QBySe4PP9rLRGJh6\"},\"s3\":{\"s3SchemaVersion\":\"1.0\",\"configurationId\":\"tf-s3-queue-20250303142857274500000006\",\"bucket\":{\"name\":\"ew2.ho.it.np.sec.splunk-firehose\",\"ownerIdentity\":{\"principalId\":\"AIRAEMCN28RPY\"},\"arn\":\"arn:aws:s3:::ew2.ho.it.np.sec.splunk-firehose\"},\"object\":{\"key\":\"ho-it-sec-test/retries/processing-failed/2025/03/04/11/fh-cw2splunk-9-2025-03-04-11-48-32-c7cc019b-af51-412d-b641-b3b44ceb3d87\",\"size\":677,\"eTag\":\"d51acdfdb2f835debf14d4ee9a271ecc\",\"versionId\":\"9PkggzWYCsWgaiuTj6g8yqel5BJQO_SL\",\"sequencer\":\"0067C6E92C64732325\"}}}]}",
       "attributes": {
         "ApproximateReceiveCount": "1",
         "SentTimestamp": "1741089069412",
@@ -120,7 +118,7 @@ The Reingestion lambda is triggered with a SQS event with a S3 event inside.
       "messageAttributes": {},
       "md5OfBody": "474daf6cbf272edf12bc7932ab08c8fd",
       "eventSource": "aws:sqs",
-      "eventSourceARN": "arn:aws:sqs:eu-west-2:104046402197:ho-it-sec-test-cw2splunk-retry-sqs",
+      "eventSourceARN": "arn:aws:sqs:eu-west-2:000000000000:cw2splunk-retry-sqs",
       "awsRegion": "eu-west-2"
     }
   ]
@@ -134,7 +132,7 @@ The file's content which was populated by firehose contains a JSON string. Multi
 The `rawData` field is a Base64 and Gzip compressed JSON string of the oringinal firehose record.
 
 ```json
-"{\"rawData\":\"H4sIAAAAAAAA/4WQS2uDQACE/8ucFfblvm5CbU49mVsNwditXaquuGtDEf97SUKhtx5nmG8GZsPoYmx7d/yeHSyeymN5fqnqujxUyBCuk1tgQYkgQgrCqFHIMIT+sIR1hsVHyH3Ko+vy5GLKuyuL87BOn3fpp/6RrtPi2hEWN/ccHypDXC+xW/ycfJie/ZDcEmFf/+3M/3I43ReqLzelG73Bv8GCa81UoQkjVGsiCs6JNEYaZjiXwhTcEGIkU5JoapiiQilhuJLIkPzoYmrHGZYqQYnWhjLOafb7FSy2Bu8hNLANLu3SYMd+2n8AV7S7kU0BAAA=\",\"errorCode\":\"Lambda.FunctionError\",\"errorMessage\":\"The Lambda function was successfully invoked but it returned an error result.\",\"attemptsMade\":4,\"arrivalTimestamp\":1741088912364,\"attemptEndingTimestamp\":1741089007666,\"lambdaARN\":\"arn:aws:lambda:eu-west-2:104046402197:function:ho-it-sec-test-cw2splunk-transformation-lambda:$LATEST\"}"
+"{\"rawData\":\"H4sIAAAAAAAA/4WQS2uDQACE/8ucFfblvm5CbU49mVsNwditXaquuGtDEf97SUKhtx5nmG8GZsPoYmx7d/yeHSyeymN5fqnqujxUyBCuk1tgQYkgQgrCqFHIMIT+sIR1hsVHyH3Ko+vy5GLKuyuL87BOn3fpp/6RrtPi2hEWN/ccHypDXC+xW/ycfJie/ZDcEmFf/+3M/3I43ReqLzelG73Bv8GCa81UoQkjVGsiCs6JNEYaZjiXwhTcEGIkU5JoapiiQilhuJLIkPzoYmrHGZYqQYnWhjLOafb7FSy2Bu8hNLANLu3SYMd+2n8AV7S7kU0BAAA=\",\"errorCode\":\"Lambda.FunctionError\",\"errorMessage\":\"The Lambda function was successfully invoked but it returned an error result.\",\"attemptsMade\":4,\"arrivalTimestamp\":1741088912364,\"attemptEndingTimestamp\":1741089007666,\"lambdaARN\":\"arn:aws:lambda:eu-west-2:000000000000:function:cw2splunk-transformation-lambda:$LATEST\"}"
 ```
 
 After processing the `rawData` field, we get:
@@ -142,10 +140,10 @@ After processing the `rawData` field, we get:
 ```json
 {
   "messageType": "DATA_MESSAGE",
-  "owner": "104046402197",
-  "logGroup": "ho-it-sec-test-cw2splunk-testing",
+  "owner": "000000000000",
+  "logGroup": "cw2splunk-testing",
   "logStream": "test_stream",
-  "subscriptionFilters": ["ho-it-sec-test-cw2splunk-testing-subscription"],
+  "subscriptionFilters": ["cw2splunk-testing-subscription"],
   "logEvents": [
     {
       "id": "38827580201880453306996929336495390096276081927147749376",
@@ -161,10 +159,10 @@ This record is sent back into Firehose, but has a `firehose_errors` field applie
 ```json
 {
   "messageType": "DATA_MESSAGE",
-  "owner": "104046402197",
-  "logGroup": "ho-it-sec-test-cw2splunk-testing",
+  "owner": "000000000000",
+  "logGroup": "cw2splunk-testing",
   "logStream": "test_stream",
-  "subscriptionFilters": ["ho-it-sec-test-cw2splunk-testing-subscription"],
+  "subscriptionFilters": ["cw2splunk-testing-subscription"],
   "logEvents": [
     {
       "id": "38827580201880453306996929336495390096276081927147749376",
@@ -181,3 +179,87 @@ This record is sent back into Firehose, but has a `firehose_errors` field applie
 Once the `firehose_errors` goes over the threshold (3 by default), the event will be placed in the S3 bucket.
 
 The message in the bucket is in the same format as it was when Firehose sent it in originally, but it has the `firehose_errors` field removed so that when it's next processed it does not automatically go back to failures.
+
+### Failed Path - Splunk Failure
+
+If Splunk has an error (outage or bad HEC token) then firehose will place the failed logs in the S3 bucket.
+
+The process is the same as the one above, however this time, the `rawData` field is not gzip compressed anymore and each log represents
+The `rawData` field is a Base64 and Gzip compressed JSON string of the oringinal firehose record.
+
+```json
+"{\"attemptsMade\":5,\"arrivalTimestamp\":1741163012000,\"errorCode\":\"Splunk.InvalidToken\",\"errorMessage\":\"The HEC token is invalid. Update Kinesis Firehose with a valid HEC token.\",\"attemptEndingTimestamp\":1741163168935,\"rawData\":\"eyJpbmRleCI6ICJtYnRwX3NlY29wc2l0X3Rlc3RlbnZfb3BzIiwgInNvdXJjZXR5cGUiOiAiX2pzb24iLCAidGltZSI6ICIxNzQxMTYzMDExOTA4IiwgImhvc3QiOiAiYXJuOmF3czpmaXJlaG9zZTpldS13ZXN0LTI6MTA0MDQ2NDAyMTk3OmRlbGl2ZXJ5c3RyZWFtL2hvLWl0LXNlYy10ZXN0LWZoLWN3MnNwbHVuayIsICJzb3VyY2UiOiAiaG8taXQtc2VjLXRlc3QtY3cyc3BsdW5rLXRlc3RpbmciLCAiZmllbGRzIjogeyJhd3NfYWNjb3VudF9pZCI6ICIxMDQwNDY0MDIxOTciLCAiY3dfbG9nX3N0cmVhbSI6ICJ0ZXN0X3N0cmVhbSJ9LCAiZXZlbnQiOiB7ImZvbyI6ICJiYXIifX0=\",\"EventId\":\"000000000000000065:shardId-00000000000000000000000000000000000000000000000000000000000000000000000000000000000049661076801743525278240143492676967389331374327438770178000000000000\"}"
+```
+
+After processing the `rawData` field, we get the post processed log:
+
+```json
+{
+  "index": "mbtp_secopsit_testenv_ops",
+  "sourcetype": "_json",
+  "time": "1741163011908",
+  "host": "arn:aws:firehose:eu-west-2:000000000000:deliverystream/fh-cw2splunk",
+  "source": "cw2splunk-testing",
+  "fields": {
+    "aws_account_id": "000000000000",
+    "cw_log_stream": "test_stream"
+  },
+  "event": { "foo": "bar" }
+}
+```
+
+This record is sent back into Firehose, but has a `firehose_errors` field applied:
+
+```json
+{
+  "index": "mbtp_secopsit_testenv_ops",
+  "sourcetype": "_json",
+  "time": "1741163011908",
+  "host": "arn:aws:firehose:eu-west-2:000000000000:deliverystream/fh-cw2splunk",
+  "source": "cw2splunk-testing",
+  "fields": {
+    "aws_account_id": "000000000000",
+    "cw_log_stream": "test_stream"
+  },
+  "event": { "foo": "bar" },
+  "fields": {
+    "firehose_errors": 1
+  }
+}
+```
+
+## Event Bridge
+
+Event Bridge messages are the same as Cloudwatch logs, however they have no gzip compression in place.
+
+The `data` field in each `record` is a Base64 encoded string. If we convert it back to a readable JSON object, we get:
+
+```json
+{
+  "version": "0",
+  "id": "f7a99dda-3125-a9cb-11a1-b766af09ab0b",
+  "detail-type": "Tag Change on Resource",
+  "source": "aws.tag",
+  "account": "000000000000",
+  "time": "2025-03-05T11:05:23Z",
+  "region": "eu-west-2",
+  "resources": ["example:arn"],
+  "detail": {
+    "changed-tag-keys": ["example"],
+    "service": "eks",
+    "tag-policy-compliant": "true",
+    "resource-type": "pod",
+    "version-timestamp": "1741172723640",
+    "version": 1,
+    "tags": {
+      "example": "foo"
+    }
+  }
+}
+```
+
+Once the log has been processed, it is returned as a JSON string. If the logs are dropped by the `deny_regex` they will be excluded from the response here.
+
+```json
+"{\"index\": \"mbtp_secopsit_testenv_ops\", \"sourcetype\": \"aws:firehose:json\", \"time\": \"1741172723.0\", \"host\": \"arn:aws:firehose:eu-west-2:000000000000:deliverystream/fh-cw2splunk\", \"source\": \"aws.tag\", \"fields\": {\"aws_account_id\": \"000000000000\"}, \"event\": {\"version\": \"0\", \"id\": \"f7a99dda-3125-a9cb-11a1-b766af09ab0b\", \"detail-type\": \"Tag Change on Resource\", \"source\": \"aws.tag\", \"account\": \"000000000000\", \"time\": \"2025-03-05T11:05:23Z\", \"region\": \"eu-west-2\", \"resources\": [\"example:arn\"], \"detail\": {\"changed-tag-keys\": [\"example\"], \"service\": \"eks\", \"tag-policy-compliant\": \"true\", \"resource-type\": \"pod\", \"version-timestamp\": \"1741172723640\", \"version\": 1.0, \"tags\": {\"example\": \"foo\"}}}}"
+```

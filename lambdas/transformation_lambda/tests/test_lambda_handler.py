@@ -2,15 +2,12 @@
 
 import base64
 from os import environ
-import io
 import json
-import re
-import boto3
 
-from botocore.stub import Stubber
 from tests.test_pre_reingest import b64compress
 from src.mbtp_splunk_cloudwatch_transformation.handler import (
     check_required_env_vars,
+    get_stats,
     lambda_handler,
 )
 import pytest
@@ -105,3 +102,22 @@ def test_missing_env_vars():
     with pytest.raises(EnvironmentError):
         check_required_env_vars()
     environ["AWS_REGION"] = "eu-west-1"
+
+
+def test_get_stats():
+    records = [
+        {"result": "Ok"},
+        {"result": "Ok"},
+        {"result": "Ok"},
+        {"result": "ProcessingFailed"},
+        {"result": "ProcessingFailed"},
+        {"result": "Dropped"},
+    ]
+    record_lists_to_reingest = [[[]], [[]], [[], []]]
+    assert get_stats(records, record_lists_to_reingest) == {
+        "Ok": 3,
+        "ProcessingFailed": 2,
+        "Dropped": 1,
+        "ReingestedSplit": 1,
+        "ReingestedAsIs": 2,
+    }
