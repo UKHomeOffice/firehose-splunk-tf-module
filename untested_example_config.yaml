@@ -22,12 +22,12 @@ sourcetypes:
       - redact
 
 events:
-  aws.tag:
+  example_event_source:
     accounts:
-      - 104046402197
+      - 123456789123
     index: example_index
     detail_types:
-      - regex: Tag Change on .*
+      - regex: Example event detail regex.*
         sourcetype: example_sourcetype
 # INPUT:
 #  account = 111111111111
