@@ -1,0 +1,39 @@
+name: 'Check PR for SemVer Label'
+on:
+  pull_request:
+    types:
+      - labeled
+      - unlabeled
+      - opened
+      - reopened
+      - synchronize
+    branches:
+      - main
+
+permissions:
+  pull-requests: read
+  contents: read
+
+jobs:
+  semver-check:
+    name: 'Check PR for SemVer Label'
+    if: |
+      contains(github.event.pull_request.labels.*.name, 'skip-release') == false
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Parse the SemVer label
+        id: label
+        uses: UKHomeOffice/match-label-action@v1
+        with:
+          labels: minor,major,patch
+          mode: singular
+
+      - name: Calculate SemVer value
+        id: calculate
+        uses: UKHomeOffice/semver-calculate-action@v2
+        with:
+          increment: ${{ steps.label.outputs.matchedLabels }}
+          github_token: ${{ secrets.GITHUB_TOKEN }}

@@ -1,0 +1,24 @@
+version: 2
+updates:
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "daily"
+    commit-message:
+      prefix: "(GHA)"
+    reviewers:
+      - "UKHomeOffice/core-cloud-devops"
+    labels:
+      - "dependencies"
+      - "patch"
+  - package-ecosystem: "terraform"
+    directory: "/modules"
+    schedule:
+      interval: "daily"
+    commit-message:
+      prefix: "(TF)"
+    reviewers:
+      - "UKHomeOffice/core-cloud-devops"
+    labels:
+      - "dependencies"
+      - "patch"
