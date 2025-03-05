@@ -21,6 +21,14 @@ sourcetypes:
     redact_regexes:
       - redact
 
+events:
+  aws.tag:
+    accounts:
+      - 104046402197
+    index: example_index
+    detail_types:
+      - regex: Tag Change on .*
+        sourcetype: example_sourcetype
 # INPUT:
 #  account = 111111111111
 #  log_group_name = example_log_group
@@ -60,9 +68,9 @@ sourcetypes:
 #  log_content = '{"foo":"bar"}'
 # OUTPUT:
 #  {
-#    "index":"example_index, 
-#    "sourcetype":"example_sourcetype", 
-#     "time": <TIMESTAMP>, 
+#    "index":"example_index,
+#    "sourcetype":"example_sourcetype",
+#     "time": <TIMESTAMP>,
 #     "host": "<FIREHOSE_ARN>",
 #     "source": "example_log_group",
 #     "fields": {
@@ -81,9 +89,9 @@ sourcetypes:
 #  log_content = '{"foo":"should be a redact here"}'
 # OUTPUT:
 #  {
-#    "index":"example_index, 
-#    "sourcetype":"example_sourcetype", 
-#     "time": <TIMESTAMP>, 
+#    "index":"example_index,
+#    "sourcetype":"example_sourcetype",
+#     "time": <TIMESTAMP>,
 #     "host": "<FIREHOSE_ARN>",
 #     "source": "example_log_group",
 #     "fields": {
