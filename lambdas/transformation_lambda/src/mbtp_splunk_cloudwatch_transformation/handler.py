@@ -77,14 +77,12 @@ import json
 import logging
 import re
 from os import environ
-
+from datetime import datetime
 import boto3
 import yaml
 from cerberus import Validator
 
 logger = logging.getLogger()
-logger.setLevel(environ.get("LOG_LEVEL", "INFO"))
-
 
 REQUIRED_ENV_VARS = {"AWS_REGION", "CONFIG_S3_BUCKET", "CONFIG_S3_KEY"}
 
@@ -123,29 +121,46 @@ def get_validated_config() -> dict:
     )
     config_yaml: dict = yaml.safe_load(s3_config_file["Body"].read().decode())
 
-    log_group_schema = {
-        "accounts": {
+    if not config_yaml:
+        raise InvalidConfigException("The supplied config file is empty")
+
+    account_schema = {
+        "type": "list",
+        "schema": {"type": "integer"},
+        "required": True,
+    }
+    index_schema = {"type": "string", "required": True}
+
+    soucetype_list_schema = {
+        "type": "dict",
+        "schema": {
+            "regex": {
+                "type": "string",
+                "required": True,
+            },
+            "sourcetype": {
+                "type": "string",
+                "required": True,
+            },
+        },
+    }
+
+    event_schema = {
+        "accounts": account_schema,
+        "index": index_schema,
+        "detail_types": {
             "type": "list",
-            "schema": {"type": "integer"},
+            "schema": soucetype_list_schema,
             "required": True,
         },
-        "index": {"type": "string", "required": True},
+    }
+
+    log_group_schema = {
+        "accounts": account_schema,
+        "index": index_schema,
         "log_streams": {
             "type": "list",
-            "schema": {
-                "type": "dict",
-                "schema": {
-                    "regex": {
-                        "type": "string",
-                        "required": True,
-                    },
-                    "sourcetype": {
-                        "type": "string",
-                        "required": True,
-                        "allowed": list(config_yaml.get("sourcetypes", {}).keys()),
-                    },
-                },
-            },
+            "schema": soucetype_list_schema,
             "required": True,
         },
     }
@@ -159,16 +174,19 @@ def get_validated_config() -> dict:
             "type": "dict",
             "keysrules": {"type": "string"},
             "valuesrules": {"type": "dict", "schema": sourcetypes_schema},
-            "required": True,
         },
         "log_groups": {
             "type": "dict",
             "keysrules": {"type": "string"},
             "valuesrules": {"type": "dict", "schema": log_group_schema},
-            "dependencies": "sourcetypes",
-            "required": True,
+        },
+        "events": {
+            "type": "dict",
+            "keysrules": {"type": "string"},
+            "valuesrules": {"type": "dict", "schema": event_schema},
         },
     }
+
     v = Validator(schema)
     v.allow_unknown = True
     if not v.validate(config_yaml):
@@ -200,48 +218,74 @@ def is_json(j: str) -> bool:
     return True
 
 
-def load_json_gzip_base64(base64_data: str) -> dict:
-    """Converts a b64, gzip compressed string into a dictionary
+def get_record_type(data: dict) -> str | None:
+    """Takes data from a firehose record and works out what type of event it is
+
+    Args:
+        data (dict): Firehose record data
+
+    Returns:
+        str | None: Type of record
+    """
+    keys = data.keys()
+    if set(("messageType", "logGroup", "owner", "logEvents")) <= keys:
+        return "cloudwatch"
+    elif set(("source", "detail-type")) <= keys:
+        return "eventbridge"
+    elif set(("index", "sourcetype", "event")) <= keys:
+        return "splunk"
+    return None
+
+
+def load_firehose_record_data(base64_data: str) -> dict:
+    """Converts a b64, optionally gzip compressed, string into a dictionary
 
     Args:
         base64_data (str): Base64 encoded data
 
     Returns:
-        dict: Decoded, decompressed, loaded dictionary
+        dict: Decoded, maybe decompressed, loaded dictionary
     """
-    return json.loads(gzip.decompress(base64.b64decode(base64_data)))
+    data = base64.b64decode(base64_data)
+    try:
+        return json.loads(gzip.decompress(data))
+    except gzip.BadGzipFile:
+        return json.loads(data)
 
 
-def transform_cloudwatch_log_event(
-    event: dict,
+def transform_event_to_splunk(
+    timestamp: str,
+    event: str | dict,
     index: str,
     sourcetype: dict,
     sourcetype_name: str,
     firehose_arn: str,
     account_id: str,
-    log_group: str,
-    log_stream: str,
+    source: str,
+    log_stream: str | None = None,
 ) -> None | str:
-    """Transforms a CW event into a Splunk one
+    """Transforms an event into a Splunk one
 
     Args:
-        event (dict): Initial event
+        timestamp (str): Event timestamp
+        event (str | dict): Initial event
         index (str): Splunk Index
         sourcetype (dict): Sourcetype object containing regexes
         sourcetype_name (str): Splunk Sourcetype name
         firehose_arn (str): Firehose ARN
         account_id (str): AWS Account ID of the initial log
-        log_group (str): Log group name
-        log_stream (str): Log group stream
+        source (str): Source of the event
+        log_stream (str | None, optional): Log group stream. Defaults to None.
 
     Returns:
         None | str: The processed message or None if we dropped it
     """
-    log = event["message"]
+
+    log = json.dumps(event) if isinstance(event, dict) else event
 
     for deny_regex in sourcetype.get("denylist_regexes", []):
         if re.search(deny_regex, log):
-            logging.info(f"Dropping log due to matching {deny_regex}. Log = {log}")
+            logger.info(f"Dropping log due to matching {deny_regex}. Log = {log}")
             return None
 
     allowed = False
@@ -250,7 +294,7 @@ def transform_cloudwatch_log_event(
             allowed = True
             break
     if not allowed:
-        logging.info(
+        logger.info(
             f"Dropping log because it did not match any allowlist regexes. Log = {log}"
         )
         return None
@@ -271,17 +315,74 @@ def transform_cloudwatch_log_event(
     new_log = {
         "index": index,
         "sourcetype": sourcetype_name,
-        "time": str(event["timestamp"]),
+        "time": timestamp,
         "host": firehose_arn,
-        "source": log_group,
+        "source": source,
         "fields": {
             "aws_account_id": account_id,
-            "cw_log_stream": log_stream,
         },
         "event": log,
     }
 
+    if log_stream:
+        new_log["fields"]["cw_log_stream"] = log_stream
+
     return json.dumps(new_log)
+
+
+def process_eventbridge_event(
+    data: dict, rec_id: str, firehose_arn: str, config: dict
+) -> dict:
+    account_id = data["account"]
+    source = data["source"]
+    detail_type = data["detail-type"]
+
+    if source not in config.get("events", {}):
+        logger.info(
+            f"EVENTBRIDGE: Dropping as we cannot locate an event source ({source}) match for it."
+        )
+        return {"result": "Dropped", "recordId": rec_id}
+
+    if int(account_id) not in config["events"][source]["accounts"]:
+        logger.info(
+            f"EVENTBRIDGE: Dropping as we cannot locate an event source ({source}) and account_id ({account_id}) match for it."
+        )
+        return {"result": "Dropped", "recordId": rec_id}
+
+    index = config["events"][source]["index"]
+
+    sourcetype_name = None
+    for sourcetype in config["events"][source]["detail_types"]:
+        if re.match(sourcetype["regex"], detail_type):
+            sourcetype_name = sourcetype["sourcetype"]
+            break
+
+    if not sourcetype_name:
+        logger.info(
+            f"EVENTBRIDGE: Dropping as we cannot locate a sourcetype match for detail_type ({detail_type}) / source ({source})."
+        )
+        return {"result": "Dropped", "recordId": rec_id}
+
+    sourcetype = config.get("sourcetypes", {}).get(sourcetype_name, {})
+
+    record = transform_event_to_splunk(
+        str(datetime.fromisoformat(data["time"]).timestamp()),
+        data,
+        index,
+        sourcetype,
+        sourcetype_name,
+        firehose_arn,
+        account_id,
+        source,
+    )
+    logger.debug("Processed Data", extra={"data": record})
+    if record:
+        return {
+            "data": base64.b64encode(record.encode()).decode(),
+            "result": "Ok",
+            "recordId": rec_id,
+        }
+    return {"result": "Dropped", "recordId": rec_id}
 
 
 def process_cloudwatch_log_record(
@@ -307,15 +408,15 @@ def process_cloudwatch_log_record(
         log_group = data["logGroup"]
         log_stream = data["logStream"]
 
-        if log_group not in config["log_groups"]:
-            logging.info(
-                f"Dropping as we cannot locate a log_group({log_group}) match for it."
+        if log_group not in config.get("log_groups", {}):
+            logger.info(
+                f"CLOUDWATCH: Dropping as we cannot locate a log_group ({log_group}) match for it."
             )
             return {"result": "Dropped", "recordId": rec_id}
 
         if int(account_id) not in config["log_groups"][log_group]["accounts"]:
-            logging.info(
-                f"Dropping as we cannot locate a log_group({log_group}) and account_id({account_id}) match for it."
+            logger.info(
+                f"CLOUDWATCH: Dropping as we cannot locate a log_group ({log_group}) and account_id ({account_id}) match for it."
             )
             return {"result": "Dropped", "recordId": rec_id}
 
@@ -328,19 +429,20 @@ def process_cloudwatch_log_record(
                 break
 
         if not sourcetype_name:
-            logging.info(
-                f"Dropping as we cannot locate a sourcetype match for log_stream({log_stream})/log_group({log_group})."
+            logger.info(
+                f"CLOUDWATCH: Dropping as we cannot locate a sourcetype match for log_stream ({log_stream}) / log_group ({log_group})."
             )
             return {"result": "Dropped", "recordId": rec_id}
 
-        sourcetype = config["sourcetypes"][sourcetype_name]
+        sourcetype = config.get("sourcetypes", {}).get(sourcetype_name, {})
 
         log_events = [
             event
             for log_event in data["logEvents"]
             if (
-                event := transform_cloudwatch_log_event(
-                    log_event,
+                event := transform_event_to_splunk(
+                    str(log_event["timestamp"]),
+                    log_event["message"],
                     index,
                     sourcetype,
                     sourcetype_name,
@@ -352,6 +454,7 @@ def process_cloudwatch_log_record(
             )
         ]
 
+        logger.debug("Processed Data", extra={"data": log_events})
         return {
             "data": base64.b64encode("\n".join(log_events).encode()).decode(),
             "result": "Ok",
@@ -385,17 +488,30 @@ def process_records(records: list[dict], firehose_arn: str, config: dict) -> lis
     """
     returned_records = []
     for r in records:
-        data = load_json_gzip_base64(r["data"])
+        data = load_firehose_record_data(r["data"])
+        logger.debug("Record", extra={"data": r})
+        logger.debug("Parsed data", extra={"data": data})
+
         rec_id = r["recordId"]
 
-        if set(("messageType", "logGroup", "owner", "logEvents")) <= data.keys():
+        record_type = get_record_type(data)
+        if record_type == "cloudwatch":
             # If it's a Cloudwatch log record
-            returned_records.append(
-                process_cloudwatch_log_record(data, rec_id, firehose_arn, config)
+            processed_record = process_cloudwatch_log_record(
+                data, rec_id, firehose_arn, config
             )
-        elif set(("index", "sourcetype", "event")) <= data.keys():
+            logger.debug("Processed record", extra={"data": processed_record})
+            returned_records.append(processed_record)
+        elif record_type == "eventbridge":
+            # If it's an Eventbridge event record
+            processed_record = process_eventbridge_event(
+                data, rec_id, firehose_arn, config
+            )
+            logger.debug("Processed record", extra={"data": processed_record})
+            returned_records.append(processed_record)
+        elif record_type == "splunk":
             # Else if it's a reingested log which can skip processing
-            logging.info(f"Reingested log detected, forwarding it on. {r}")
+            logger.info(f"Reingested log detected, forwarding it on. {r}")
             returned_records.append(
                 {
                     "data": base64.b64encode(json.dumps(data).encode()).decode(),
@@ -475,7 +591,7 @@ def put_records_to_firehose_stream(
 
     if failed_records:
         if attempts_made + 1 < max_attempts:
-            logging.info(
+            logger.info(
                 f"Some records failed while calling Putrecord_batch to Firehose stream, retrying. {err_msg}"
             )
             put_records_to_firehose_stream(
@@ -524,9 +640,7 @@ def reingest_records(
             # last argument is maxAttempts
             put_records_to_firehose_stream(stream_name, record_batch)
             records_reingested_so_far += len(record_batch)
-            logging.info(
-                f"Reingested {records_reingested_so_far}/{len(flattened_list)}"
-            )
+            logger.info(f"Reingested {records_reingested_so_far}/{len(flattened_list)}")
 
 
 def work_out_records_to_reingest(
@@ -563,21 +677,28 @@ def work_out_records_to_reingest(
         # We shouldn't get any processed reingested logs hitting this as they will be less than 6MB (reingestion already checked that)
         if record_size > max_return_size:
             # Reload original data
-            cwl_record = load_json_gzip_base64(original_record["data"])
-            # If there is more than one log event, split log events in half and re-process
-            if len(cwl_record.get("logEvents", [])) > 1:
-                rec["result"] = "Dropped"
-                record_lists_to_reingest.append(
-                    [
-                        create_reingestion_record(original_record, data)
-                        for data in split_cwl_record(cwl_record)
-                    ]
-                )
+            record_data = load_firehose_record_data(original_record["data"])
+            record_type = get_record_type(record_data)
+            if record_type == "cloudwatch":
+                # If there is more than one log event, split log events in half and re-process
+                if len(record_data.get("logEvents", [])) > 1:
+                    rec["result"] = "Dropped"
+                    record_lists_to_reingest.append(
+                        [
+                            create_reingestion_record(original_record, data)
+                            for data in split_cwl_record(record_data)
+                        ]
+                    )
+                else:
+                    # Else if it's just one large message, drop it
+                    rec["result"] = "ProcessingFailed"
+                    logger.info(
+                        f"Record {rec["recordId"]} contains only one log event but is still too large after processing ({record_size} bytes), marking it as {rec["result"]}"
+                    )
             else:
-                # Else if it's just one large message, drop it
                 rec["result"] = "ProcessingFailed"
                 logging.info(
-                    f"Record {rec["recordId"]} contains only one log event but is still too large after processing ({record_size} bytes), marking it as {rec["result"]}"
+                    f"A large record of type {record_type} tried to be split but couldn't."
                 )
             del rec["data"]
         else:
@@ -593,16 +714,42 @@ def work_out_records_to_reingest(
     return record_lists_to_reingest
 
 
-def lambda_handler(event: dict, _context: dict) -> dict:
-    """Lambda function to transform cloudwatch logs to Splunk HEC events.
+def get_stats(records: list, record_lists_to_reingest: list) -> dict:
+    """Takes the processed records and generates some output stats
 
     Args:
-        event (dict): Cloudwatch event
+        records (list): Processed records
+        record_lists_to_reingest (list): List of records that need reingesting.
+
+    Returns:
+        dict: Returned stats object
+    """
+    result_types = ["Ok", "ProcessingFailed", "Dropped"]
+    stats = {x: 0 for x in result_types + ["ReingestedSplit", "ReingestedAsIs"]}
+    for record in records:
+        for result_type in result_types:
+            if record["result"] == result_type:
+                stats[result_type] += 1
+
+    for record in record_lists_to_reingest:
+        t = "ReingestedSplit" if len(record) > 1 else "ReingestedAsIs"
+        stats[t] += 1
+
+    return stats
+
+
+def lambda_handler(event: dict, _context: dict) -> dict:
+    """Lambda function to transform Cloudwatch logs and Eventbridge events to Splunk HEC events.
+
+    Args:
+        event (dict): Firehose transformation event
         _context (dict): Lambda context
 
     Returns:
         dict: Transformed logs
     """
+    logger.debug("Incoming event", extra={"data": event})
+
     firehose_arn = event["deliveryStreamArn"]
     stream_name = firehose_arn.split("/")[1]
 
@@ -610,14 +757,9 @@ def lambda_handler(event: dict, _context: dict) -> dict:
     record_lists_to_reingest = work_out_records_to_reingest(event, records)
     reingest_records(record_lists_to_reingest, stream_name)
 
-    logging.info(
-        "%d input records, %d returned as Ok or ProcessingFailed, %d split and re-ingested, %d re-ingested as-is"
-        % (
-            len(event["records"]),
-            len([r for r in records if r["result"] != "Dropped"]),
-            len([l for l in record_lists_to_reingest if len(l) > 1]),
-            len([l for l in record_lists_to_reingest if len(l) == 1]),
-        )
-    )
+    stats = get_stats(records, record_lists_to_reingest)
+    logger.info("stats", extra={"stats": stats})
+
+    logger.debug("Outgoing event", extra={"data": {"records": records}})
 
     return {"records": records}

@@ -22,8 +22,10 @@ resource "aws_lambda_function" "firehose_lambda_process_failures" {
   memory_size      = var.process_failures_lambda_memory_size
   tags             = var.tags
   logging_config {
-    log_format = "JSON"
-    log_group  = aws_cloudwatch_log_group.process_failures_lambda_logs.name
+    log_format            = "JSON"
+    log_group             = aws_cloudwatch_log_group.process_failures_lambda_logs.name
+    application_log_level = var.process_failures_lambda_log_level
+
   }
   environment {
     variables = {

@@ -115,3 +115,19 @@ def test_work_out_records_to_reingest_multiple_too_big():
     ]
     assert records[0]["result"] == "Dropped"
     assert "data" not in records[0]
+
+
+def test_work_out_records_to_reingest_large_non_cloudwatch():
+    data = {"index": "foo", "sourcetype": "bar", "event": {}}
+
+    event = {
+        "records": [
+            {"data": base64.b64encode(json.dumps(data).encode()).decode()},
+        ]
+    }
+    records = [
+        {"result": "Ok", "recordId": "1", "data": ""},
+    ]
+    assert work_out_records_to_reingest(event, records, 1) == []
+    assert records[0]["result"] == "ProcessingFailed"
+    assert "data" not in records[0]

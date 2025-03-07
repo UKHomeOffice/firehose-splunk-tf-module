@@ -15,8 +15,12 @@ from src.mbtp_splunk_cloudwatch_transformation.handler import (
 
 test_configs = [
     (
-        """hello: {}""",
+        "",
         True,
+    ),
+    (
+        """hello: {}""",
+        False,
     ),
     (
         """
@@ -36,6 +40,14 @@ log_groups:
         log_streams: 
             - regex: .*
               sourcetype: TEST_SOURCETYPE
+sourcetypes: {}
+""",
+        False,
+    ),
+    (
+        """
+log_groups:
+    LOG_GROUP_NAME: {}
 sourcetypes: {}
 """,
         True,

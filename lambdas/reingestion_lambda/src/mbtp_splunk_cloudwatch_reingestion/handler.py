@@ -10,7 +10,6 @@ import boto3
 import botocore
 
 logger = logging.getLogger()
-logger.setLevel(environ.get("LOG_LEVEL", "INFO"))
 
 
 REQUIRED_ENV_VARS = {
@@ -55,7 +54,10 @@ def get_records_from_s3(bucket: str, key: str, version_id: str) -> list[str]:
     # Grab the file from S3 and loop through the lines in it
     s3_file = s3_client.get_object(Bucket=bucket, Key=key, VersionId=version_id)
     records = []
-    for line in s3_file["Body"].read().decode().splitlines():
+    s3_file_data = s3_file["Body"].read().decode()
+    logger.debug("S3 file data", extra={"data": s3_file_data})
+
+    for line in s3_file_data.splitlines():
         if line.strip():
             # Parse the line as JSON, extract the rawData and b64 decode it
             batch = json.loads(line)
@@ -65,7 +67,8 @@ def get_records_from_s3(bucket: str, key: str, version_id: str) -> list[str]:
                 record = base64.b64decode(batch["rawData"]).decode()
 
             records.append(record)
-    logging.debug(f"Downloaded {key} and extracted {records}")
+    logger.debug(f"Downloaded {key} and extracted {records}")
+    logger.debug("S3 parsed data", extra={"data": records})
     return records
 
 
@@ -80,7 +83,7 @@ def get_logs_from_record(record: str) -> list[dict]:
             i.e. the logs after they were transformed by the transformation lambda.
     """
     logs = [json.loads(log) for log in record.splitlines()]
-    logging.debug(f"Extracted {len(logs)} logs from {record}")
+    logger.debug("Extracted logs from record", extra={"data": logs})
     return logs
 
 
@@ -102,10 +105,10 @@ def add_log_to_output_list(
     # and add it to the appropriate list.
     log["fields"]["firehose_errors"] = log["fields"].get("firehose_errors", 0) + 1
     if log["fields"]["firehose_errors"] >= MAX_RETRIES:
-        logging.info(f"Greater than MAX_RETRIES, sending to S3 - {log}")
+        logger.info(f"Greater than MAX_RETRIES, sending to S3 - {log}")
         data_to_s3.append(log)
     else:
-        logging.info(
+        logger.info(
             f"{log["fields"]["firehose_errors"]} is less than MAX_RETRIES, sending to Firehose - {log}"
         )
         data_to_firehose.append(log)
@@ -139,9 +142,11 @@ def send_to_s3(data_to_s3: list[dict], bucket: str, key: str):
         key (str): Key to save them to.
     """
     if data_to_s3:
-        s3_lines = get_s3_lines(data_to_s3)
-        s3_client.put_object(Bucket=bucket, Key=key, Body="\n".join(s3_lines).encode())
-        logging.debug(f"Written file to {bucket}/{key}")
+        logger.debug(f"Sending data to S3", extra={"data": data_to_s3})
+        s3_lines = "\n".join(get_s3_lines(data_to_s3))
+        logger.debug(f"Sending lines to S3", extra={"data": s3_lines})
+        s3_client.put_object(Bucket=bucket, Key=key, Body=s3_lines.encode())
+        logger.debug(f"Written file to {bucket}/{key}")
 
 
 # https://docs.aws.amazon.com/firehose/latest/APIReference/API_PutRecordBatch.html
@@ -171,6 +176,8 @@ def send_to_firehose(
         for log in data_to_firehose:
             # Compress the log with GZIP so we can process it the same as the
             # Cloudwatch logs when we receive it back on the transformation lambda.
+            logger.debug("Sending to firehose", extra={"data": log})
+
             compressed_data = gzip.compress(json.dumps(log).encode())
             record = {"Data": compressed_data}
             record_size = len(
@@ -193,7 +200,7 @@ def send_to_firehose(
                 predicted_size += record_size
                 records.append(record)
             else:
-                logging.debug(f"Log is too big, adding to S3 instead - {log}")
+                logger.debug(f"Log is too big, adding to S3 instead - {log}")
                 data_to_s3.append(log)
         if records:
             # Catch any leftover records at the end
@@ -217,7 +224,7 @@ def push_to_firehose(
         max_attempts (int, optional): Maximum number of attempts before we give up and put it in S3.
             Defaults to 20.
     """
-    logging.debug(f"Sending {len(records)} to Firehose")
+    logger.debug(f"Sending {len(records)} to Firehose")
 
     failed_records = []
     codes = []
@@ -232,7 +239,7 @@ def push_to_firehose(
     except Exception as e:  # pylint: disable=broad-exception-caught
         failed_records = records
         err_msg = str(e)
-        logging.warning(
+        logger.warning(
             (
                 "Some records failed while calling ",
                 f"PutRecordBatch to Firehose stream, retrying. {err_msg}",
@@ -253,7 +260,7 @@ def push_to_firehose(
     # If any logs failed to process, increase the counter and try sending them again
     if failed_records:
         if attempts_made + 1 < max_attempts:
-            logging.warning(
+            logger.warning(
                 (
                     "Some records failed while calling ",
                     f"PutRecordBatch to Firehose stream, retrying. {err_msg}",
@@ -297,11 +304,13 @@ def lambda_handler(event: dict, _context: dict):
         event (dict): SQS Event from AWS
         _context (dict): Lambda execution context - not used.
     """
+    logger.debug("Incoming event", extra={"data": event})
+
     # https://docs.aws.amazon.com/lambda/latest/dg/with-sqs.html#example-standard-queue-message-event
-    for sqs_record in event["Records"]:
-        s3_event = json.loads(sqs_record["body"])
+    for sqs_record in event.get("Records", []):
+        s3_event = json.loads(sqs_record.get("body", {}))
         # https://docs.aws.amazon.com/AmazonS3/latest/userguide/notification-content-structure.html
-        for s3_record in s3_event["Records"]:
+        for s3_record in s3_event.get("Records", []):
             data_to_s3: list[dict] = []
             data_to_firehose: list[dict] = []
 
@@ -313,20 +322,20 @@ def lambda_handler(event: dict, _context: dict):
                 continue
 
             # Get the logs from the file and assign them to firehose or S3
-            logging.info(f"Processing {key}")
+            logger.info(f"Processing {key}")
             records = get_records_from_s3(bucket, key, version_id)
             for record in records:
                 for log in get_logs_from_record(record):
                     add_log_to_output_list(log, data_to_firehose, data_to_s3)
 
-            logging.info(f"Processed {bucket}/{key}")
-            logging.info(f"Sending {len(data_to_firehose)} to Firehose")
+            logger.info(f"Processed {bucket}/{key}")
+            logger.info(f"Sending {len(data_to_firehose)} to Firehose")
             send_to_firehose(data_to_firehose, data_to_s3)
 
-            logging.info(f"Sending {len(data_to_s3)} to S3")
+            logger.info(f"Sending {len(data_to_s3)} to S3")
             send_to_s3(
                 data_to_s3, bucket, f"{FAILED_PREFIX}{key.removeprefix(RETRIES_PREFIX)}"
             )
 
-            logging.info(f"Deleting {bucket}/{key}")
+            logger.info(f"Deleting {bucket}/{key}")
             s3_client.delete_object(Bucket=bucket, Key=key, VersionId=version_id)

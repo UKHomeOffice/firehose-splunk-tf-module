@@ -49,7 +49,7 @@ module "firehose" {
 # Subscription module
 module "subscription-filters" {
   source                      = "./modules/subscription_filters"
-  firehose_arn                = module.splunk-firehose.destination_firehose_arn
+  firehose_arn                = module.firehose.destination_firehose_arn
   account_id                  = local.account_id
   config_disk_path            = local.config_file
   environment_prefix_variable = local.environment_prefix_variable
