@@ -19,9 +19,21 @@ jobs:
         uses: actions/checkout@v4
 
       # Results have to be a table as the organisation does not have Advanced Security license.
-      - name: Terraform Trivy Scan
-        uses: aquasecurity/trivy-action@0.29.0
+      # - name: Terraform Trivy Scan
+      #   uses: aquasecurity/trivy-action@0.29.0
+      #   with:
+      #     scan-type: 'config'
+      #    #trivyignores: ".trivyignore"
+      #     exit-code: '1'
+
+      - name: Checkov GitHub Action
+        uses: bridgecrewio/checkov-action@v12
+        continue-on-error: true
         with:
-          scan-type: 'config'
-         #trivyignores: ".trivyignore"
-          exit-code: '1'
+          output_format: cli,sarif
+          output_file_path: console,results.sarif
+
+      - name: Upload SARIF file
+        uses: github/codeql-action/upload-sarif@v2
+        with:
+          sarif_file: results.sarif
