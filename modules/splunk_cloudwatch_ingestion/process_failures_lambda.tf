@@ -4,6 +4,7 @@ data "archive_file" "process_failures_lambda_function" {
   output_path = "${path.module}/../../lambdas/process_failures_lambda/src/mbtp_splunk_cloudwatch_process_failures/handler_${timestamp()}.zip"
 }
 
+#trivy:ignore:AVD-AWS-0066 - X-Ray tracing not required for this function
 resource "aws_lambda_function" "firehose_lambda_process_failures" {
   # checkov:skip=CKV_AWS_116:DLQ not required for manually triggered lambda
   # checkov:skip=CKV_AWS_117:Doesn't need to be configured in a VPC as networking is not handled at this level. 
@@ -38,8 +39,9 @@ resource "aws_lambda_function" "firehose_lambda_process_failures" {
   }
 }
 
+#trivy:ignore:AVD-AWS-0017 - Not enabling KMS encryption for now
 resource "aws_cloudwatch_log_group" "process_failures_lambda_logs" {
-  # checkov:skip=CKV_AWS_158: Not enabling encryption for now
+  # checkov:skip=CKV_AWS_158: Not enabling KMS encryption for now
   # checkov:skip=CKV_AWS_338: Ignore retention below 1 year
   name              = "/aws/lambda/${var.environment_prefix_variable}-${var.process_failures_lambda_name}"
   retention_in_days = var.lambda_log_retention

@@ -58,8 +58,9 @@ resource "aws_kinesis_firehose_delivery_stream" "kinesis_firehose" {
   tags = var.tags
 }
 
+#trivy:ignore:AVD-AWS-0017 - Not enabling KMS encryption for now
 resource "aws_cloudwatch_log_group" "firehose_log_group" {
-  # checkov:skip=CKV_AWS_158: Not enabling encryption for now
+  # checkov:skip=CKV_AWS_158: Not enabling KMS encryption for now
   # checkov:skip=CKV_AWS_338: Ignore retention below 1 year
   name              = "/aws/kinesisfirehose/${var.environment_prefix_variable}-${var.firehose_log_group_name}"
   retention_in_days = var.firehose_log_retention

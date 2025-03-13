@@ -1,4 +1,4 @@
-
+#trivy:ignore:AVD-AWS-0089 - Logging not needed for this bucket
 resource "aws_s3_bucket" "failed_bucket" {
   bucket = var.bucket_name
   tags   = var.tags
