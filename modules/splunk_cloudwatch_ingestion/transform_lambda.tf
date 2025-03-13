@@ -17,6 +17,7 @@ data "archive_file" "transformation_lambda_compressor" {
   type        = "zip"
 }
 
+#trivy:ignore:AVD-AWS-0066 - X-Ray tracing not required for this function
 resource "aws_lambda_function" "firehose_lambda_transformation" {
   # checkov:skip=CKV_AWS_116:DLQ is on the reingestion SQS.
   # checkov:skip=CKV_AWS_117:Doesn't need to be configured in a VPC as networking is not handled at this level. 
@@ -48,8 +49,9 @@ resource "aws_lambda_function" "firehose_lambda_transformation" {
   depends_on = [null_resource.transformation_lambda_exporter]
 }
 
+#trivy:ignore:AVD-AWS-0017 - Not enabling KMS encryption for now
 resource "aws_cloudwatch_log_group" "transformation_lambda_logs" {
-  # checkov:skip=CKV_AWS_158: Not enabling encryption for now
+  # checkov:skip=CKV_AWS_158: Not enabling KMS encryption for now
   # checkov:skip=CKV_AWS_338: Ignore retention below 1 year
   name              = "/aws/lambda/${var.environment_prefix_variable}-${var.transformation_lambda_name}"
   retention_in_days = var.lambda_log_retention

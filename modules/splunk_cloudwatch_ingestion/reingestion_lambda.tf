@@ -4,6 +4,7 @@ data "archive_file" "reingestion_lambda_function" {
   output_path = "${path.module}/../../lambdas/reingestion_lambda/src/mbtp_splunk_cloudwatch_reingestion/handler_${timestamp()}.zip"
 }
 
+#trivy:ignore:AVD-AWS-0066 - X-Ray tracing not required for this function
 resource "aws_lambda_function" "firehose_lambda_reingestion" {
   # checkov:skip=CKV_AWS_116:DLQ is on the reingestion SQS.
   # checkov:skip=CKV_AWS_117:Doesn't need to be configured in a VPC as networking is not handled at this level. 
@@ -37,8 +38,9 @@ resource "aws_lambda_function" "firehose_lambda_reingestion" {
   }
 }
 
+#trivy:ignore:AVD-AWS-0017 - Not enabling KMS encryption for now
 resource "aws_cloudwatch_log_group" "reingestion_lambda_logs" {
-  # checkov:skip=CKV_AWS_158: Not enabling encryption for now
+  # checkov:skip=CKV_AWS_158: Not enabling KMS encryption for now
   # checkov:skip=CKV_AWS_338: Ignore retention below 1 year
   name              = "/aws/lambda/${var.environment_prefix_variable}-${var.reingestion_lambda_name}"
   retention_in_days = var.lambda_log_retention
