@@ -119,7 +119,7 @@ resource "aws_cloudwatch_metric_alarm" "cloudwatch_alarm_firehose_splunk_process
 }
 
 # CloudWatch Alarm for IncomingBytes 
-resource "aws_cloudwatch_metric_alarm" "cloudwatch_alarm_firehose_incoming_bytes_100" {
+resource "aws_cloudwatch_metric_alarm" "cloudwatch_alarm_firehose_incoming_bytes" {
   for_each = local.multiplier_rate
   alarm_name                = "${var.environment_prefix_variable}-firehose-incoming-bytes-${each.key}"
   alarm_description         = "${local.alarm_description_text} ${each.key} of the BytesPerSecondLimit"
