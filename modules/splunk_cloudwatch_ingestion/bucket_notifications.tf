@@ -4,7 +4,7 @@ resource "aws_s3_bucket_notification" "bucket_notification" {
   bucket = var.s3_bucket_name
 
   queue {
-    queue_arn     = aws_sqs_queue.retry_notification_queue.arn
+    queue_arn     = aws_sqs_queue.retry_sqs_dql.arn
     events        = ["s3:ObjectCreated:*"]
     filter_prefix = var.s3_failed_prefix
   }
