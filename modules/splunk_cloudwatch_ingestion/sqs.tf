@@ -44,7 +44,7 @@ resource "aws_sqs_queue" "retry_sqs_dql" {
   message_retention_seconds = 1209600  
 }
 
-resource "aws_sqs_queue_policy" "s3_sqs" {
+resource "aws_sqs_queue_policy" "s3_sqs_dlq" {
   queue_url = aws_sqs_queue.retry_sqs_dql.id
 
   policy = jsonencode({
