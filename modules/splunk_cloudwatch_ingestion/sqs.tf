@@ -41,4 +41,5 @@ resource "aws_sqs_queue" "retry_sqs_dql" {
   kms_master_key_id          = aws_kms_key.firehose_key.id
   visibility_timeout_seconds = var.reingestion_lambda_timeout*6 # aws recommends 6x lambda timeout 
   tags                       = var.tags
+  message_retention_seconds = 1209600  
 }
