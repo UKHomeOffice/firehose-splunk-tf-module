@@ -122,7 +122,7 @@ resource "aws_cloudwatch_metric_alarm" "cloudwatch_alarm_firehose_splunk_process
 resource "aws_cloudwatch_metric_alarm" "cloudwatch_alarm_firehose_incoming_bytes_100" {
   for_each = local.multiplier_rate
   alarm_name                = "${var.environment_prefix_variable}-firehose-incoming-bytes"
-  alarm_description         = "${alarm_description_text} ${each.key} of the BytesPerSecondLimit"
+  alarm_description         = "${local.alarm_description_text} ${each.key} of the BytesPerSecondLimit"
   metric_name               = "BytesPerSecondLimit"
   namespace                 = "AWS/Firehose"
   statistic                 = "Maximum"
@@ -147,7 +147,7 @@ resource "aws_cloudwatch_metric_alarm" "cloudwatch_alarm_firehose_incoming_bytes
 resource "aws_cloudwatch_metric_alarm" "cloudwatch_alarm_firehose_incoming_put_requests" {
   for_each = local.multiplier_rate
   alarm_name                = "${var.environment_prefix_variable}-firehose-incoming-put-requests"
-  alarm_description         = "${alarm_description_text} ${each.key} of the PutRequestsPerSecondLimit"
+  alarm_description         = "${local.alarm_description_text} ${each.key} of the PutRequestsPerSecondLimit"
   metric_name               = "PutRequestsPerSecondLimit"
   namespace                 = "AWS/Firehose"
   statistic                 = "Maximum"
@@ -173,7 +173,7 @@ resource "aws_cloudwatch_metric_alarm" "cloudwatch_alarm_firehose_incoming_put_r
 resource "aws_cloudwatch_metric_alarm" "cloudwatch_alarm_firehose_incoming_records" {
   for_each = local.multiplier_rate
   alarm_name                = "${var.environment_prefix_variable}-firehose-incoming-records"
-  alarm_description         = "${alarm_description_text} ${each.key} of the RecordsPerSecondLimit"
+  alarm_description         = "${local.alarm_description_text} ${each.key} of the RecordsPerSecondLimit"
   metric_name               = "RecordsPerSecondLimit"
   namespace                 = "AWS/Firehose"
   statistic                 = "Maximum"
