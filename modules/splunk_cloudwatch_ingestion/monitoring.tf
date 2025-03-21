@@ -165,7 +165,7 @@ resource "aws_cloudwatch_metric_alarm" "cloudwatch_alarm_firehose_incoming_bytes
       namespace   = "AWS/Firehose"
       period      = 60
       stat        = "Minimum"
-      unit        = "Count"
+      unit        = "Bytes/Second"
 
       dimensions = {
         DeliveryStreamName = local.firehose_stream_name
@@ -221,8 +221,8 @@ resource "aws_cloudwatch_metric_alarm" "cloudwatch_alarm_firehose_incoming_put_r
       metric_name = "PutRequestsPerSecondLimit"
       namespace   = "AWS/Firehose"
       period      = 60
-      stat        = "Sum"
-      unit        = "Count"
+      stat        = "Minimum"
+      unit        = "Bytes/Second"
 
       dimensions = {
         DeliveryStreamName = local.firehose_stream_name
@@ -279,8 +279,8 @@ resource "aws_cloudwatch_metric_alarm" "cloudwatch_alarm_firehose_incoming_recor
       metric_name = "RecordsPerSecondLimit"
       namespace   = "AWS/Firehose"
       period      = 60
-      stat        = "Sum"
-      unit        = "Count"
+      stat        = "Minimum"
+      unit        = "Bytes/Second"
 
       dimensions = {
         DeliveryStreamName = local.firehose_stream_name
