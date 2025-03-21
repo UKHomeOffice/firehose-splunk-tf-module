@@ -126,7 +126,6 @@ resource "aws_cloudwatch_metric_alarm" "cloudwatch_alarm_firehose_incoming_bytes
   comparison_operator       = "GreaterThanThreshold"
   evaluation_periods        = 5
   datapoints_to_alarm       = 3
-  period                    = 60 
   threshold                 = each.value
   tags                      = var.tags
   treat_missing_data        = "ignore" 
@@ -184,7 +183,6 @@ resource "aws_cloudwatch_metric_alarm" "cloudwatch_alarm_firehose_incoming_put_r
   comparison_operator       = "GreaterThanThreshold"
   evaluation_periods        = 5
   datapoints_to_alarm       = 3
-  period                    = 60 
   threshold                 = each.value
   tags                      = var.tags
   treat_missing_data        = "ignore" 
@@ -243,7 +241,6 @@ resource "aws_cloudwatch_metric_alarm" "cloudwatch_alarm_firehose_incoming_recor
   comparison_operator       = "GreaterThanThreshold"
   evaluation_periods        = 5
   datapoints_to_alarm       = 3
-  period                    = 60 
   threshold                 = each.value
   tags                      = var.tags
   treat_missing_data        = "ignore" 
