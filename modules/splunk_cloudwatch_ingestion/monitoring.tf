@@ -123,7 +123,6 @@ resource "aws_cloudwatch_metric_alarm" "cloudwatch_alarm_firehose_incoming_bytes
   for_each = local.multiplier_rate
   alarm_name                = "${var.environment_prefix_variable}-firehose-incoming-bytes-${each.key}"
   alarm_description         = "${local.alarm_description_text} ${each.key} of the BytesPerSecondLimit"
-  statistic                 = "Maximum"
   comparison_operator       = "GreaterThanThreshold"
   evaluation_periods        = 5
   datapoints_to_alarm       = 3
@@ -137,8 +136,8 @@ resource "aws_cloudwatch_metric_alarm" "cloudwatch_alarm_firehose_incoming_bytes
   ok_actions                = [aws_sns_topic.sns_topic_alerts.arn]
 
   metric_query {
-    id          = "o1"
-    expression  = "m1/m2"
+    id          = "e1"
+    expression  = "m1/PERIOD(m1)/m2"
     label       = "Percentage Byte Limit"
     return_data = "true"
   }
@@ -166,7 +165,7 @@ resource "aws_cloudwatch_metric_alarm" "cloudwatch_alarm_firehose_incoming_bytes
       metric_name = "BytesPerSecondLimit"
       namespace   = "AWS/Firehose"
       period      = 60
-      stat        = "Sum"
+      stat        = "Minimum"
       unit        = "Count"
 
       dimensions = {
@@ -182,7 +181,6 @@ resource "aws_cloudwatch_metric_alarm" "cloudwatch_alarm_firehose_incoming_put_r
   for_each = local.multiplier_rate
   alarm_name                = "${var.environment_prefix_variable}-firehose-incoming-put-requests-${each.key}"
   alarm_description         = "${local.alarm_description_text} ${each.key} of the PutRequestsPerSecondLimit"
-  statistic                 = "Maximum"
   comparison_operator       = "GreaterThanThreshold"
   evaluation_periods        = 5
   datapoints_to_alarm       = 3
@@ -196,8 +194,8 @@ resource "aws_cloudwatch_metric_alarm" "cloudwatch_alarm_firehose_incoming_put_r
   ok_actions                = [aws_sns_topic.sns_topic_alerts.arn]
 
   metric_query {
-    id          = "o1"
-    expression  = "m1/m2"
+    id          = "e1"
+    expression  = "m1/PERIOD(m1)/m2"
     label       = "Percentage Put Limit"
     return_data = "true"
   }
@@ -242,7 +240,6 @@ resource "aws_cloudwatch_metric_alarm" "cloudwatch_alarm_firehose_incoming_recor
   for_each = local.multiplier_rate
   alarm_name                = "${var.environment_prefix_variable}-firehose-incoming-records-${each.key}"
   alarm_description         = "${local.alarm_description_text} ${each.key} of the RecordsPerSecondLimit"
-  statistic                 = "Maximum"
   comparison_operator       = "GreaterThanThreshold"
   evaluation_periods        = 5
   datapoints_to_alarm       = 3
@@ -256,8 +253,8 @@ resource "aws_cloudwatch_metric_alarm" "cloudwatch_alarm_firehose_incoming_recor
   ok_actions                = [aws_sns_topic.sns_topic_alerts.arn]
 
   metric_query {
-    id          = "o1"
-    expression  = "m1/m2"
+    id          = "e1"
+    expression  = "m1/PERIOD(m1)/m2"
     label       = "Percentage Record Limit"
     return_data = "true"
   }
