@@ -123,22 +123,56 @@ resource "aws_cloudwatch_metric_alarm" "cloudwatch_alarm_firehose_incoming_bytes
   for_each = local.multiplier_rate
   alarm_name                = "${var.environment_prefix_variable}-firehose-incoming-bytes-${each.key}"
   alarm_description         = "${local.alarm_description_text} ${each.key} of the BytesPerSecondLimit"
-  metric_name               = "BytesPerSecondLimit"
-  namespace                 = "AWS/Firehose"
   statistic                 = "Maximum"
   comparison_operator       = "GreaterThanThreshold"
   evaluation_periods        = 5
   datapoints_to_alarm       = 3
   period                    = 60 
-  threshold                 = local.firehose_bytes_limit * each.value
-  insufficient_data_actions = []
+  threshold                 = each.value
   tags                      = var.tags
   treat_missing_data        = "ignore" 
   actions_enabled           = true
+  insufficient_data_actions = []
   alarm_actions             = [aws_sns_topic.sns_topic_alerts.arn]
   ok_actions                = [aws_sns_topic.sns_topic_alerts.arn]
-  dimensions = {
-    DeliveryStreamName = local.firehose_stream_name
+
+  metric_query {
+    id          = "o1"
+    expression  = "m1/m2"
+    label       = "Percentage Byte Limit"
+    return_data = "true"
+  }
+
+  metric_query {
+    id = "m1"
+
+    metric {
+      metric_name = "IncomingBytes"
+      namespace   = "AWS/Firehose"
+      period      = 60
+      stat        = "Sum"
+      unit        = "Count"
+
+      dimensions = {
+        DeliveryStreamName = local.firehose_stream_name
+      }
+    }
+  }
+
+  metric_query {
+    id = "m2"
+
+    metric {
+      metric_name = "BytesPerSecondLimit"
+      namespace   = "AWS/Firehose"
+      period      = 60
+      stat        = "Sum"
+      unit        = "Count"
+
+      dimensions = {
+        DeliveryStreamName = local.firehose_stream_name
+      }
+    }
   }
 }
 
@@ -148,22 +182,56 @@ resource "aws_cloudwatch_metric_alarm" "cloudwatch_alarm_firehose_incoming_put_r
   for_each = local.multiplier_rate
   alarm_name                = "${var.environment_prefix_variable}-firehose-incoming-put-requests-${each.key}"
   alarm_description         = "${local.alarm_description_text} ${each.key} of the PutRequestsPerSecondLimit"
-  metric_name               = "PutRequestsPerSecondLimit"
-  namespace                 = "AWS/Firehose"
   statistic                 = "Maximum"
   comparison_operator       = "GreaterThanThreshold"
   evaluation_periods        = 5
   datapoints_to_alarm       = 3
   period                    = 60 
-  threshold                 = local.firehose_put_requests_limit * each.value
-  insufficient_data_actions = []
+  threshold                 = each.value
   tags                      = var.tags
   treat_missing_data        = "ignore" 
   actions_enabled           = true
+  insufficient_data_actions = []
   alarm_actions             = [aws_sns_topic.sns_topic_alerts.arn]
   ok_actions                = [aws_sns_topic.sns_topic_alerts.arn]
-  dimensions = {
-    DeliveryStreamName = local.firehose_stream_name
+
+  metric_query {
+    id          = "o1"
+    expression  = "m1/m2"
+    label       = "Percentage Put Limit"
+    return_data = "true"
+  }
+
+  metric_query {
+    id = "m1"
+
+    metric {
+      metric_name = "IncomingPutRequests"
+      namespace   = "AWS/Firehose"
+      period      = 60
+      stat        = "Sum"
+      unit        = "Count"
+
+      dimensions = {
+        DeliveryStreamName = local.firehose_stream_name
+      }
+    }
+  }
+
+  metric_query {
+    id = "m2"
+
+    metric {
+      metric_name = "PutRequestsPerSecondLimit"
+      namespace   = "AWS/Firehose"
+      period      = 60
+      stat        = "Sum"
+      unit        = "Count"
+
+      dimensions = {
+        DeliveryStreamName = local.firehose_stream_name
+      }
+    }
   }
 }
 
@@ -174,21 +242,55 @@ resource "aws_cloudwatch_metric_alarm" "cloudwatch_alarm_firehose_incoming_recor
   for_each = local.multiplier_rate
   alarm_name                = "${var.environment_prefix_variable}-firehose-incoming-records-${each.key}"
   alarm_description         = "${local.alarm_description_text} ${each.key} of the RecordsPerSecondLimit"
-  metric_name               = "RecordsPerSecondLimit"
-  namespace                 = "AWS/Firehose"
   statistic                 = "Maximum"
   comparison_operator       = "GreaterThanThreshold"
   evaluation_periods        = 5
   datapoints_to_alarm       = 3
   period                    = 60 
-  threshold                 = local.firehose_incoming_records_limit * each.value
-  insufficient_data_actions = []
+  threshold                 = each.value
   tags                      = var.tags
   treat_missing_data        = "ignore" 
   actions_enabled           = true
+  insufficient_data_actions = []
   alarm_actions             = [aws_sns_topic.sns_topic_alerts.arn]
   ok_actions                = [aws_sns_topic.sns_topic_alerts.arn]
-  dimensions = {
-    DeliveryStreamName = local.firehose_stream_name
+
+  metric_query {
+    id          = "o1"
+    expression  = "m1/m2"
+    label       = "Percentage Record Limit"
+    return_data = "true"
+  }
+
+  metric_query {
+    id = "m1"
+
+    metric {
+      metric_name = "IncomingRecords"
+      namespace   = "AWS/Firehose"
+      period      = 60
+      stat        = "Sum"
+      unit        = "Count"
+
+      dimensions = {
+        DeliveryStreamName = local.firehose_stream_name
+      }
+    }
+  }
+
+  metric_query {
+    id = "m2"
+
+    metric {
+      metric_name = "RecordsPerSecondLimit"
+      namespace   = "AWS/Firehose"
+      period      = 60
+      stat        = "Sum"
+      unit        = "Count"
+
+      dimensions = {
+        DeliveryStreamName = local.firehose_stream_name
+      }
+    }
   }
 }
