@@ -3,7 +3,7 @@ locals {
 
   multiplier_rate = {
       "100%" : 1
-      "80%" : 0.8
+      "10%" : 0.1
   }
   alarm_description_text = "Alarm when ${local.firehose_stream_name} Firehose reaches"
 }
