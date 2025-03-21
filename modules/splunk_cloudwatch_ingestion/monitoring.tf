@@ -119,60 +119,60 @@ resource "aws_cloudwatch_metric_alarm" "cloudwatch_alarm_firehose_splunk_process
 }
 
 # CloudWatch Alarm for IncomingBytes 
-resource "aws_cloudwatch_metric_alarm" "cloudwatch_alarm_firehose_incoming_bytes" {
-  for_each = local.multiplier_rate
-  alarm_name                = "${var.environment_prefix_variable}-firehose-incoming-bytes-${each.key}"
-  alarm_description         = "${local.alarm_description_text} ${each.key} of the BytesPerSecondLimit"
-  comparison_operator       = "GreaterThanThreshold"
-  evaluation_periods        = 5
-  datapoints_to_alarm       = 3
-  threshold                 = each.value
-  tags                      = var.tags
-  treat_missing_data        = "ignore" 
-  actions_enabled           = true
-  insufficient_data_actions = []
-  alarm_actions             = [aws_sns_topic.sns_topic_alerts.arn]
-  ok_actions                = [aws_sns_topic.sns_topic_alerts.arn]
+# resource "aws_cloudwatch_metric_alarm" "cloudwatch_alarm_firehose_incoming_bytes" {
+#   for_each = local.multiplier_rate
+#   alarm_name                = "${var.environment_prefix_variable}-firehose-incoming-bytes-${each.key}"
+#   alarm_description         = "${local.alarm_description_text} ${each.key} of the BytesPerSecondLimit"
+#   comparison_operator       = "GreaterThanThreshold"
+#   evaluation_periods        = 5
+#   datapoints_to_alarm       = 3
+#   threshold                 = each.value
+#   tags                      = var.tags
+#   treat_missing_data        = "ignore" 
+#   actions_enabled           = true
+#   insufficient_data_actions = []
+#   alarm_actions             = [aws_sns_topic.sns_topic_alerts.arn]
+#   ok_actions                = [aws_sns_topic.sns_topic_alerts.arn]
 
-  metric_query {
-    id          = "e1"
-    expression  = "m1/PERIOD(m1)/m2"
-    label       = "Percentage Byte Limit"
-    return_data = "true"
-  }
+#   metric_query {
+#     id          = "e1"
+#     expression  = "m1/PERIOD(m1)/m2"
+#     label       = "Percentage Byte Limit"
+#     return_data = "true"
+#   }
 
-  metric_query {
-    id = "m1"
+#   metric_query {
+#     id = "m1"
 
-    metric {
-      metric_name = "IncomingBytes"
-      namespace   = "AWS/Firehose"
-      period      = 60
-      stat        = "Sum"
-      unit        = "Count"
+#     metric {
+#       metric_name = "IncomingBytes"
+#       namespace   = "AWS/Firehose"
+#       period      = 60
+#       stat        = "Sum"
+#       unit        = "Count"
 
-      dimensions = {
-        DeliveryStreamName = local.firehose_stream_name
-      }
-    }
-  }
+#       dimensions = {
+#         DeliveryStreamName = local.firehose_stream_name
+#       }
+#     }
+#   }
 
-  metric_query {
-    id = "m2"
+#   metric_query {
+#     id = "m2"
 
-    metric {
-      metric_name = "BytesPerSecondLimit"
-      namespace   = "AWS/Firehose"
-      period      = 60
-      stat        = "Minimum"
-      unit        = "Count"
+#     metric {
+#       metric_name = "BytesPerSecondLimit"
+#       namespace   = "AWS/Firehose"
+#       period      = 60
+#       stat        = "Minimum"
+#       unit        = "Count"
 
-      dimensions = {
-        DeliveryStreamName = local.firehose_stream_name
-      }
-    }
-  }
-}
+#       dimensions = {
+#         DeliveryStreamName = local.firehose_stream_name
+#       }
+#     }
+#   }
+# }
 
 # CloudWatch Alarm for IncomingPutRequests 
 
