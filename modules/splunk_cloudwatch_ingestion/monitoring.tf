@@ -136,7 +136,7 @@ resource "aws_cloudwatch_metric_alarm" "cloudwatch_alarm_firehose_incoming_bytes
 
   metric_query {
     id          = "e1"
-    expression  = "m1/PERIOD(m1)/m2"
+    expression  = "(m1/PERIOD(m1))/(m2/PERIOD(m1))"
     label       = "Percentage Byte Limit"
     return_data = "true"
   }
@@ -164,7 +164,7 @@ resource "aws_cloudwatch_metric_alarm" "cloudwatch_alarm_firehose_incoming_bytes
       metric_name = "BytesPerSecondLimit"
       namespace   = "AWS/Firehose"
       period      = 60
-      stat        = "Minimum"
+      stat        = "Sum"
       unit        = "Bytes/Second"
 
       dimensions = {
