@@ -136,7 +136,7 @@ resource "aws_cloudwatch_metric_alarm" "cloudwatch_alarm_firehose_incoming_bytes
 
   metric_query {
     id          = "e1"
-    expression  = "(m1/PERIOD(m1))/(m2/PERIOD(m2))"
+    expression  = "(m1/PERIOD(m1))/FILL(m2, REPEAT)"
     label       = "Percentage Byte Limit"
     return_data = "true"
   }
@@ -149,7 +149,7 @@ resource "aws_cloudwatch_metric_alarm" "cloudwatch_alarm_firehose_incoming_bytes
       namespace   = "AWS/Firehose"
       period      = 60
       stat        = "Sum"
-      unit        = "Count"
+      unit        = "Bytes"
 
       dimensions = {
         DeliveryStreamName = local.firehose_stream_name
@@ -164,8 +164,8 @@ resource "aws_cloudwatch_metric_alarm" "cloudwatch_alarm_firehose_incoming_bytes
       metric_name = "BytesPerSecondLimit"
       namespace   = "AWS/Firehose"
       period      = 60
-      stat        = "Sum"
-      unit        = "Bytes/Second"
+      stat        = "Minumum"
+      unit        = "Bytes/sec"
 
       dimensions = {
         DeliveryStreamName = local.firehose_stream_name
@@ -192,7 +192,7 @@ resource "aws_cloudwatch_metric_alarm" "cloudwatch_alarm_firehose_incoming_put_r
 
   metric_query {
     id          = "e1"
-    expression  = "m1/PERIOD(m1)/m2"
+    expression  = "(m1/PERIOD(m1))/FILL(m2, REPEAT)"
     label       = "Percentage Put Limit"
     return_data = "true"
   }
@@ -221,7 +221,7 @@ resource "aws_cloudwatch_metric_alarm" "cloudwatch_alarm_firehose_incoming_put_r
       namespace   = "AWS/Firehose"
       period      = 60
       stat        = "Minimum"
-      unit        = "Bytes/Second"
+      unit        = "Count"
 
       dimensions = {
         DeliveryStreamName = local.firehose_stream_name
@@ -249,7 +249,7 @@ resource "aws_cloudwatch_metric_alarm" "cloudwatch_alarm_firehose_incoming_recor
 
   metric_query {
     id          = "e1"
-    expression  = "m1/PERIOD(m1)/m2"
+    expression  = "(m1/PERIOD(m1))/FILL(m2, REPEAT)"
     label       = "Percentage Record Limit"
     return_data = "true"
   }
@@ -277,8 +277,8 @@ resource "aws_cloudwatch_metric_alarm" "cloudwatch_alarm_firehose_incoming_recor
       metric_name = "RecordsPerSecondLimit"
       namespace   = "AWS/Firehose"
       period      = 60
-      stat        = "Maximum"
-      unit        = "Bytes/Second"
+      stat        = "Minimum"
+      unit        = "Count"
 
       dimensions = {
         DeliveryStreamName = local.firehose_stream_name
