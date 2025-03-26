@@ -164,7 +164,7 @@ resource "aws_cloudwatch_metric_alarm" "cloudwatch_alarm_firehose_incoming_bytes
       metric_name = "BytesPerSecondLimit"
       namespace   = "AWS/Firehose"
       period      = 60
-      stat        = "Minumum"
+      stat        = "Minimum"
       unit        = "Bytes/sec"
 
       dimensions = {
