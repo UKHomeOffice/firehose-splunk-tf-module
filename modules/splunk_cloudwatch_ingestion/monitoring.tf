@@ -165,7 +165,7 @@ resource "aws_cloudwatch_metric_alarm" "cloudwatch_alarm_firehose_incoming_bytes
       namespace   = "AWS/Firehose"
       period      = 60
       stat        = "Minimum"
-      unit        = "Bytes/sec"
+      unit        = "Bytes/Second"
 
       dimensions = {
         DeliveryStreamName = local.firehose_stream_name
