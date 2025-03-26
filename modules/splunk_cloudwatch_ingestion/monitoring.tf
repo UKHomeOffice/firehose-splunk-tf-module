@@ -220,7 +220,7 @@ resource "aws_cloudwatch_metric_alarm" "cloudwatch_alarm_firehose_incoming_put_r
       metric_name = "PutRequestsPerSecondLimit"
       namespace   = "AWS/Firehose"
       period      = 60
-      stat        = "Min"
+      stat        = "Minimum"
       unit        = "Bytes/Second"
 
       dimensions = {
