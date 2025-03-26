@@ -14,7 +14,8 @@ import pytest
 
 config = {
     "log_groups": {
-        "TEST_LOG_GROUP": {
+        "test_config": {
+            "log_group": "TEST_LOG_GROUP",
             "accounts": [123456789012],
             "index": "TEST_INDEX",
             "log_streams": [

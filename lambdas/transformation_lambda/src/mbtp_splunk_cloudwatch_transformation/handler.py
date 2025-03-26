@@ -146,6 +146,7 @@ def get_validated_config() -> dict:
     }
 
     event_schema = {
+        "event_source": {"type": "string", "required": True},
         "accounts": account_schema,
         "index": index_schema,
         "detail_types": {
@@ -156,6 +157,7 @@ def get_validated_config() -> dict:
     }
 
     log_group_schema = {
+        "log_group": {"type": "string", "required": True},
         "accounts": account_schema,
         "index": index_schema,
         "log_streams": {
@@ -337,24 +339,35 @@ def process_eventbridge_event(
     source = data["source"]
     detail_type = data["detail-type"]
 
-    if source not in config.get("events", {}):
+    events_filtered = [
+        x for _, x in config.get("events", {}).items() if x["event_source"] == source
+    ]
+
+    if not events_filtered:
         logger.info(
             f"EVENTBRIDGE: Dropping as we cannot locate an event source ({source}) match for it."
         )
         return {"result": "Dropped", "recordId": rec_id}
 
-    if int(account_id) not in config["events"][source]["accounts"]:
+    account_id_filtered = [
+        x for x in events_filtered if int(account_id) in x["accounts"]
+    ]
+
+    if not account_id_filtered:
         logger.info(
             f"EVENTBRIDGE: Dropping as we cannot locate an event source ({source}) and account_id ({account_id}) match for it."
         )
         return {"result": "Dropped", "recordId": rec_id}
 
-    index = config["events"][source]["index"]
-
+    index = None
     sourcetype_name = None
-    for sourcetype in config["events"][source]["detail_types"]:
-        if re.match(sourcetype["regex"], detail_type):
-            sourcetype_name = sourcetype["sourcetype"]
+    for log_config in account_id_filtered:
+        for sourcetype in log_config["detail_types"]:
+            if re.match(sourcetype["regex"], detail_type):
+                sourcetype_name = sourcetype["sourcetype"]
+                index = log_config["index"]
+                break
+        if sourcetype_name:
             break
 
     if not sourcetype_name:
@@ -408,24 +421,37 @@ def process_cloudwatch_log_record(
         log_group = data["logGroup"]
         log_stream = data["logStream"]
 
-        if log_group not in config.get("log_groups", {}):
+        log_group_filtered = [
+            x
+            for _, x in config.get("log_groups", {}).items()
+            if x["log_group"] == log_group
+        ]
+
+        if not log_group_filtered:
             logger.info(
                 f"CLOUDWATCH: Dropping as we cannot locate a log_group ({log_group}) match for it."
             )
             return {"result": "Dropped", "recordId": rec_id}
 
-        if int(account_id) not in config["log_groups"][log_group]["accounts"]:
+        account_id_filtered = [
+            x for x in log_group_filtered if int(account_id) in x["accounts"]
+        ]
+
+        if not account_id_filtered:
             logger.info(
                 f"CLOUDWATCH: Dropping as we cannot locate a log_group ({log_group}) and account_id ({account_id}) match for it."
             )
             return {"result": "Dropped", "recordId": rec_id}
 
-        index = config["log_groups"][log_group]["index"]
-
+        index = None
         sourcetype_name = None
-        for sourcetype in config["log_groups"][log_group]["log_streams"]:
-            if re.match(sourcetype["regex"], log_stream):
-                sourcetype_name = sourcetype["sourcetype"]
+        for log_config in account_id_filtered:
+            for sourcetype in log_config["log_streams"]:
+                if re.match(sourcetype["regex"], log_stream):
+                    sourcetype_name = sourcetype["sourcetype"]
+                    index = log_config["index"]
+                    break
+            if sourcetype_name:
                 break
 
         if not sourcetype_name:
