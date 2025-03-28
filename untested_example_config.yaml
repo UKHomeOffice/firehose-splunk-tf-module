@@ -1,5 +1,6 @@
 log_groups:
-  example_log_group:
+  config_friendly_name:
+    log_group: example_log_group
     accounts:
       - 123456789123
     index: example_index
@@ -22,7 +23,8 @@ sourcetypes:
       - redact
 
 events:
-  example_event_source: # e.g. aws.tag
+  event_friendly_name:
+    event_source: aws.tag
     accounts:
       - 123456789123
     index: example_index

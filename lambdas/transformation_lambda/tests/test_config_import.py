@@ -32,7 +32,8 @@ sourcetypes: {}
     (
         """
 log_groups:
-    LOG_GROUP_NAME:
+    test_config:
+        log_group: LOG_GROUP_NAME
         accounts:
             - 123456
             - 456789
@@ -47,7 +48,7 @@ sourcetypes: {}
     (
         """
 log_groups:
-    LOG_GROUP_NAME: {}
+    test_config: {}
 sourcetypes: {}
 """,
         True,
@@ -55,7 +56,8 @@ sourcetypes: {}
     (
         """
 log_groups:
-    LOG_GROUP_NAME:
+    test_config:
+        log_group: LOG_GROUP_NAME
         accounts:
             - 123456
             - 456789
@@ -71,7 +73,8 @@ sourcetypes:
     (
         """
 log_groups:
-    LOG_GROUP_NAME:
+    test_config:
+        log_group: LOG_GROUP_NAME
         accounts:
             - 123456
             - 456789

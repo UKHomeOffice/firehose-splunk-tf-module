@@ -6,7 +6,8 @@ It requires a config file which it can download from S3. The config file must us
 
 ```
 log_groups:
-  <LOG_GROUP_NAME>:
+  <FRIENDLY_NAME>:
+    log_group: <LOG_GROUP_NAME>
     accounts:
       - <ACCOUNT_ID> # To allow cross account subscription filters
     index: <INDEX>
@@ -22,6 +23,16 @@ sourcetypes:
       - <REGEX_PATTERN_TO_DENY> # Optional. Defaults to []
     redact_regexes:
       - <REGEX_PATTERN_TO_REDACT> # Optional. Defaults to []
+events:
+  <FRIENDLY_NAME>:
+    event_source: <EVENT_SOURCE>
+    accounts:
+      - <ACCOUNT_ID> # To allow cross account subscription filters
+    index: <INDEX>
+    detail_types:
+      - regex: <EVENT_DETAIL_REGEX>
+        sourcetype: <SOURCETYPE>
+    subscription_filter: <SUBSCRIPTION_FILTER> # Optional. Default to allow all.
 ```
 
 ## Development
