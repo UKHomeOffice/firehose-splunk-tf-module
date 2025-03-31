@@ -126,7 +126,7 @@ def get_validated_config() -> dict:
 
     account_schema = {
         "type": "list",
-        "schema": {"type": "integer"},
+        "schema": {"type": "string", "coerce": str},
         "required": True,
     }
     index_schema = {"type": "string", "required": True}
@@ -194,7 +194,7 @@ def get_validated_config() -> dict:
     if not v.validate(config_yaml):
         raise InvalidConfigException(f"Config failed to parse - {v.errors}")
 
-    return config_yaml
+    return v.document
 
 
 CONFIG = {}
@@ -335,7 +335,7 @@ def transform_event_to_splunk(
 def process_eventbridge_event(
     data: dict, rec_id: str, firehose_arn: str, config: dict
 ) -> dict:
-    account_id = data["account"]
+    account_id = str(data["account"])
     source = data["source"]
     detail_type = data["detail-type"]
 
@@ -349,9 +349,7 @@ def process_eventbridge_event(
         )
         return {"result": "Dropped", "recordId": rec_id}
 
-    account_id_filtered = [
-        x for x in events_filtered if int(account_id) in x["accounts"]
-    ]
+    account_id_filtered = [x for x in events_filtered if account_id in x["accounts"]]
 
     if not account_id_filtered:
         logger.info(
@@ -417,7 +415,7 @@ def process_cloudwatch_log_record(
     if data["messageType"] == "CONTROL_MESSAGE":
         return {"result": "Dropped", "recordId": rec_id}
     if data["messageType"] == "DATA_MESSAGE":
-        account_id = data["owner"]
+        account_id = str(data["owner"])
         log_group = data["logGroup"]
         log_stream = data["logStream"]
 
@@ -434,7 +432,7 @@ def process_cloudwatch_log_record(
             return {"result": "Dropped", "recordId": rec_id}
 
         account_id_filtered = [
-            x for x in log_group_filtered if int(account_id) in x["accounts"]
+            x for x in log_group_filtered if account_id in x["accounts"]
         ]
 
         if not account_id_filtered:

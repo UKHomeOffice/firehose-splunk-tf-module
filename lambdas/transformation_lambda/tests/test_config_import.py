@@ -36,7 +36,7 @@ log_groups:
         log_group: LOG_GROUP_NAME
         accounts:
             - 123456
-            - 456789
+            - "456789"
         index: TEST_INDEX
         log_streams: 
             - regex: .*
@@ -60,7 +60,7 @@ log_groups:
         log_group: LOG_GROUP_NAME
         accounts:
             - 123456
-            - 456789
+            - "456789"
         index: TEST_INDEX
         log_streams: 
             - regex: .*
@@ -77,7 +77,7 @@ log_groups:
         log_group: LOG_GROUP_NAME
         accounts:
             - 123456
-            - 456789
+            - "456789"
         index: TEST_INDEX
         log_streams: 
             - regex: .*
@@ -90,6 +90,16 @@ sourcetypes:
             - .*
         redact_regexes:
             - .*
+events:
+    test_config:
+        event_source: EVENT_SOURCE
+        accounts:
+            - 123456
+            - "456789"
+        index: TEST_INDEX
+        detail_types: 
+            - regex: .*
+              sourcetype: TEST_SOURCETYPE
 """,
         False,
     ),
@@ -114,7 +124,16 @@ def test_get_validated_config(test_config, error, mocker):
     )
 
     if not error:
-        assert get_validated_config() == yaml.safe_load(test_config)
+        test_config = yaml.safe_load(test_config)
+        for config_section in [
+            test_config.get("log_groups", {}),
+            test_config.get("events", {}),
+        ]:
+            for details in config_section.values():
+                if "accounts" in details:
+                    details["accounts"] = [str(x) for x in details["accounts"]]
+
+        assert get_validated_config() == test_config
     else:
         with pytest.raises(InvalidConfigException):
             get_validated_config()
