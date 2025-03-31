@@ -12,8 +12,9 @@ from src.mbtp_splunk_cloudwatch_transformation.handler import (
 
 config = {
     "log_groups": {
-        "TEST_LOG_GROUP": {
-            "accounts": [123456789012],
+        "test_config": {
+            "log_group": "TEST_LOG_GROUP",
+            "accounts": ["123456789012"],
             "index": "TEST_INDEX",
             "log_streams": [
                 {"regex": "^TEST_LOG_STREAM$", "sourcetype": "TEST_SOURCETYPE"}
@@ -22,8 +23,9 @@ config = {
     },
     "sourcetypes": {"TEST_SOURCETYPE": {"denylist_regexes": ["DROPME"]}},
     "events": {
-        "aws.tag": {
-            "accounts": [123456789012],
+        "test_config": {
+            "event_source": "aws.tag",
+            "accounts": ["123456789012"],
             "index": "TEST_INDEX",
             "detail_types": [
                 {"regex": "Tag Change on .*", "sourcetype": "TEST_SOURCETYPE"}
