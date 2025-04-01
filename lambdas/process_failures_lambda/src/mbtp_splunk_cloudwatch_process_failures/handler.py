@@ -79,4 +79,3 @@ def lambda_handler(_event, _context):
     """Lambda function to re-processed any files that
     failed to be sent to Splunk after the retries."""
     redrive_dlq_sqs(environ["DLQ_QUEUE_ARN"], environ["SQS_QUEUE_ARN"])
-    #reprocess_failed_files(environ["S3_BUCKET_NAME"])

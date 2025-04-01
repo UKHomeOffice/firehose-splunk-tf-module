@@ -280,3 +280,27 @@ resource "aws_cloudwatch_metric_alarm" "cloudwatch_alarm_firehose_incoming_recor
     }
   }
 }
+
+
+# CloudWatch Alarm for no IncomingRecords to Firehose 
+resource "aws_cloudwatch_metric_alarm" "cloudwatch_alarm_firehose_no_incoming_records" {
+  count                     = var.create_alarm ? 1 : 0  
+  alarm_name                = "${var.environment_prefix_variable}-firehose-no-incoming-records"
+  alarm_description         = "Alarm if the ${local.firehose_stream_name} Firehose to Splunk stops receiving records"
+  metric_name               = "IncomingRecords"
+  namespace                 = "AWS/Firehose"
+  statistic                 = "Sum"
+  comparison_operator       = "LessThanThreshold"
+  evaluation_periods        = 1
+  period                    = local.record_time_check
+  threshold                 = 1
+  insufficient_data_actions = []
+  tags                      = var.tags
+  treat_missing_data        = "ignore"
+  actions_enabled           = true
+  alarm_actions             = [aws_sns_topic.sns_topic_alerts.arn]
+  ok_actions                = [aws_sns_topic.sns_topic_alerts.arn]
+  dimensions = {
+    DeliveryStreamName = local.firehose_stream_name
+  }
+}
