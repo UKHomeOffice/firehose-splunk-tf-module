@@ -284,7 +284,7 @@ resource "aws_cloudwatch_metric_alarm" "cloudwatch_alarm_firehose_incoming_recor
 
 # CloudWatch Alarm for no IncomingRecords to Firehose 
 resource "aws_cloudwatch_metric_alarm" "cloudwatch_alarm_firehose_no_incoming_records" {
-  count                     = var.create_alarm ? 1 : 0  
+  count                     = var.create_firehose_no_incoming_records_alarm ? 1 : 0  
   alarm_name                = "${var.environment_prefix_variable}-firehose-no-incoming-records"
   alarm_description         = "Alarm if the ${local.firehose_stream_name} Firehose to Splunk stops receiving records"
   metric_name               = "IncomingRecords"
