@@ -191,6 +191,12 @@ variable "alerts_subscription_emails" {
   type        = list(string)
 }
 
+variable "create_firehose_no_incoming_records_alarm" {
+  description = "Boolean flag to determine whether the alarm should be created"
+  type        = bool
+  default     = true
+}
+
 #
 # SQS Queues
 #

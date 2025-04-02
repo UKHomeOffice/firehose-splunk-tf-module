@@ -41,4 +41,28 @@ resource "aws_sqs_queue" "retry_sqs_dql" {
   kms_master_key_id          = aws_kms_key.firehose_key.id
   visibility_timeout_seconds = var.reingestion_lambda_timeout*6 # aws recommends 6x lambda timeout 
   tags                       = var.tags
+  message_retention_seconds = local.fourteen_days_in_seconds  
+}
+
+resource "aws_sqs_queue_policy" "s3_sqs_dlq" {
+  queue_url = aws_sqs_queue.retry_sqs_dql.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Principal = {
+          Service = "s3.amazonaws.com"
+        }
+        Action   = "sqs:SendMessage"
+        Resource = aws_sqs_queue.retry_sqs_dql.arn
+        Condition = {
+          ArnEquals = {
+            "aws:SourceArn" = var.s3_bucket_arn
+          }
+        }
+      }
+    ]
+  })
 }
