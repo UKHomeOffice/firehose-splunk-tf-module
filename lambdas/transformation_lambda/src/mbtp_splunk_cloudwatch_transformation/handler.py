@@ -126,7 +126,12 @@ def get_validated_config() -> dict:
 
     account_schema = {
         "type": "list",
-        "schema": {"type": "string", "coerce": str},
+        "schema": {
+            "type": "string",
+            "minlength": 12,
+            "maxlength": 12,
+            "regex": r"^\d+$",
+        },
         "required": True,
     }
     index_schema = {"type": "string", "required": True}
