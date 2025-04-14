@@ -35,15 +35,47 @@ log_groups:
     test_config:
         log_group: LOG_GROUP_NAME
         accounts:
-            - 123456
-            - "456789"
+            - 123456123456
+            - "456789456789"
         index: TEST_INDEX
         log_streams: 
             - regex: .*
               sourcetype: TEST_SOURCETYPE
 sourcetypes: {}
 """,
-        False,
+        True,
+    ),
+    (
+        """
+log_groups:
+    test_config:
+        log_group: LOG_GROUP_NAME
+        accounts:
+            - 123456123456
+            - "456789456789"
+        index: TEST_INDEX
+        log_streams: 
+            - regex: .*
+              sourcetype: TEST_SOURCETYPE
+sourcetypes: {}
+""",
+        True,
+    ),
+    (
+        """
+log_groups:
+    test_config:
+        log_group: LOG_GROUP_NAME
+        accounts:
+            - "123456"
+            - "456789456789"
+        index: TEST_INDEX
+        log_streams: 
+            - regex: .*
+              sourcetype: TEST_SOURCETYPE
+sourcetypes: {}
+""",
+        True,
     ),
     (
         """
@@ -59,8 +91,8 @@ log_groups:
     test_config:
         log_group: LOG_GROUP_NAME
         accounts:
-            - 123456
-            - "456789"
+            - "123456123456"
+            - "456789456789"
         index: TEST_INDEX
         log_streams: 
             - regex: .*
@@ -76,8 +108,8 @@ log_groups:
     test_config:
         log_group: LOG_GROUP_NAME
         accounts:
-            - 123456
-            - "456789"
+            - "123456123456"
+            - "456789456789"
         index: TEST_INDEX
         log_streams: 
             - regex: .*
@@ -94,8 +126,8 @@ events:
     test_config:
         event_source: EVENT_SOURCE
         accounts:
-            - 123456
-            - "456789"
+            - "123456123456"
+            - "456789456789"
         index: TEST_INDEX
         detail_types: 
             - regex: .*
