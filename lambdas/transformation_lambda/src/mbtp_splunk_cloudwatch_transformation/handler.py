@@ -79,7 +79,7 @@ import re
 from os import environ
 from datetime import datetime
 import boto3
-import yaml
+from ruamel.yaml import YAML
 from cerberus import Validator
 
 logger = logging.getLogger()
@@ -101,6 +101,7 @@ REGION = environ["AWS_REGION"]
 
 firehose_client = boto3.client("firehose", region_name=REGION)
 s3_client = boto3.client("s3", region_name=REGION)
+yaml = YAML(typ="safe")
 
 
 class InvalidConfigException(Exception):
@@ -119,14 +120,14 @@ def get_validated_config() -> dict:
     s3_config_file: dict = s3_client.get_object(
         Bucket=environ["CONFIG_S3_BUCKET"], Key=environ["CONFIG_S3_KEY"]
     )
-    config_yaml: dict = yaml.safe_load(s3_config_file["Body"].read().decode())
+    config_yaml: dict = yaml.load(s3_config_file["Body"].read().decode())
 
     if not config_yaml:
         raise InvalidConfigException("The supplied config file is empty")
 
     account_schema = {
         "type": "list",
-        "schema": {"type": "string", "coerce": str},
+        "schema": {"type": "string", "coerce": lambda s: str(s).zfill(12)},
         "required": True,
     }
     index_schema = {"type": "string", "required": True}

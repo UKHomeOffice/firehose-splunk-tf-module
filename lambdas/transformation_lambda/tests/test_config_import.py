@@ -6,7 +6,7 @@ from botocore.response import StreamingBody
 
 from botocore.stub import Stubber
 import pytest
-import yaml
+from ruamel.yaml import YAML
 from src.mbtp_splunk_cloudwatch_transformation.handler import (
     InvalidConfigException,
     get_validated_config,
@@ -94,8 +94,8 @@ events:
     test_config:
         event_source: EVENT_SOURCE
         accounts:
-            - 123456
-            - "456789"
+            - 00123456
+            - "00456789"
         index: TEST_INDEX
         detail_types: 
             - regex: .*
@@ -124,14 +124,17 @@ def test_get_validated_config(test_config, error, mocker):
     )
 
     if not error:
-        test_config = yaml.safe_load(test_config)
+        yaml = YAML(typ="safe")
+        test_config = yaml.load(test_config)
         for config_section in [
             test_config.get("log_groups", {}),
             test_config.get("events", {}),
         ]:
             for details in config_section.values():
                 if "accounts" in details:
-                    details["accounts"] = [str(x) for x in details["accounts"]]
+                    details["accounts"] = [
+                        str(x).zfill(12) for x in details["accounts"]
+                    ]
 
         assert get_validated_config() == test_config
     else:
