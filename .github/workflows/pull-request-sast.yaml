@@ -20,7 +20,7 @@ jobs:
 
       # Results have to be a table as the organisation does not have Advanced Security license.
       - name: Terraform Trivy Scan
-        uses: aquasecurity/trivy-action@0.30.0
+        uses: aquasecurity/trivy-action@0.31.0
         with:
           scan-type: 'config'
          #trivyignores: ".trivyignore"
