@@ -60,6 +60,7 @@ Make sure you have pdm installed (python3.12 -m pip install pdm), then to instal
 
 ### Generate requirements.txt
 Converts requirements in pyproject.toml into requirements.txt used by the package.sh script
+
 `pdm requirements`
 
 ## Contributing
