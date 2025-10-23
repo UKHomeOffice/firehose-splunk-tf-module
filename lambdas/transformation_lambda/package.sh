@@ -1,4 +1,5 @@
 #!/bin/bash
+set -euo pipefail
 
 rm -rf venv_package
 rm -rf package
