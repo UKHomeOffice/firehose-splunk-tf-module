@@ -24,3 +24,15 @@ variable "environment_prefix_variable" {
   description = "Environment prefix provided by the importing module in order to ensure resources have unique names."
   type        = string
 }
+
+variable "organization_id" {
+  description = "AWS Organization ID - if set, allows org accounts to write to promon prefix"
+  type        = string
+  default     = null
+}
+
+variable "promon_prefix" {
+  description = "S3 prefix for promon logs"
+  type        = string
+  default     = "promon"
+}

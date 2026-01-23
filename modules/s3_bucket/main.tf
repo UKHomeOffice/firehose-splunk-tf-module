@@ -54,4 +54,33 @@ data "aws_iam_policy_document" "failed_bucket_policy" {
       values   = var.approved_s3_resources
     }
   }
+  # Allow org accounts to write to their own promon prefix
+  dynamic "statement" {
+    for_each = var.organization_id != null ? [1] : []
+    content {
+      sid    = "AllowOrgAccountsWriteToOwnPromonPrefix"
+      effect = "Allow"
+      principals {
+        type        = "*"
+        identifiers = ["*"]
+      }
+      actions = [
+        "s3:PutObject",
+        "s3:AbortMultipartUpload"
+      ]
+      resources = [
+        "arn:aws:s3:::${var.bucket_name}/${var.promon_prefix}/$${aws:PrincipalAccount}/*"
+      ]
+      condition {
+        test     = "StringEquals"
+        variable = "aws:PrincipalOrgID"
+        values   = [var.organization_id]
+      }
+      condition {
+        test     = "StringEquals"
+        variable = "s3:x-amz-acl"
+        values   = ["bucket-owner-full-control"]
+      }
+    }
+  }
 }
