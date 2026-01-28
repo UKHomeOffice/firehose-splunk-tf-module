@@ -30,7 +30,7 @@ jobs:
       path: '.'
   sonarqube-scan:
     name: Run SonarQube Scan
-    uses: UKHomeOffice/core-cloud-workflow-sonarqube-scan/.github/workflows/sonarqube-scan.yaml@1.1.4
+    uses: UKHomeOffice/core-cloud-workflow-sonarqube-scan/.github/workflows/sonarqube-scan.yaml@1.1.7
     secrets:
       sonar_token: ${{ secrets.sonar_token }}
       sonar_host_url: ${{ secrets.sonar_host_url }}
