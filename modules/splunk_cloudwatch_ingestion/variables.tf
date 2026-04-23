@@ -102,6 +102,10 @@ variable "s3_bucket_arn" {
   description = "The arn of the bucket in which logs are stored when they fail being sent to splunk."
 }
 
+variable "s3_bucket_account" {
+  description = "Account ID of the bucket being used for config and failed logs."
+}
+
 variable "s3_retries_prefix" {
   description = "Prefix to store failed Firehose logs that need reingesting."
   default     = "retries/"

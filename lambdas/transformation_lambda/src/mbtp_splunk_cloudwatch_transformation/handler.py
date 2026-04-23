@@ -84,7 +84,7 @@ from cerberus import Validator
 
 logger = logging.getLogger()
 
-REQUIRED_ENV_VARS = {"AWS_REGION", "CONFIG_S3_BUCKET", "CONFIG_S3_KEY"}
+REQUIRED_ENV_VARS = {"AWS_REGION", "CONFIG_S3_BUCKET", "CONFIG_S3_KEY", "CONFIG_S3_ACCOUNT"}
 
 
 def check_required_env_vars():
@@ -117,7 +117,7 @@ def get_validated_config() -> dict:
         dict: Processed configuration.
     """
     s3_config_file: dict = s3_client.get_object(
-        Bucket=environ["CONFIG_S3_BUCKET"], Key=environ["CONFIG_S3_KEY"]
+        Bucket=environ["CONFIG_S3_BUCKET"], Key=environ["CONFIG_S3_KEY"], ExpectedBucketOwner=environ["CONFIG_S3_ACCOUNT"]
     )
     config_yaml: dict = yaml.safe_load(s3_config_file["Body"].read().decode())
 
