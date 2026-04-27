@@ -102,7 +102,8 @@ variable "s3_bucket_arn" {
   description = "The arn of the bucket in which logs are stored when they fail being sent to splunk."
 }
 
-variable "s3_bucket_account" {
+variable "s3_bucket_account_id" {
+  type = string
   description = "Account ID of the bucket being used for config and failed logs."
 }
 

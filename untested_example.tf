@@ -45,7 +45,7 @@ module "firehose" {
   account_id                  = local.account_id
   s3_config_file_key          = aws_s3_object.config_upload.key
   s3_kms_key_arn              = local.bucket_kms_arn
-  s3_bucket_account           = local.bucket_account
+  s3_bucket_account_id        = local.bucket_account
 }
 
 # Subscription module
