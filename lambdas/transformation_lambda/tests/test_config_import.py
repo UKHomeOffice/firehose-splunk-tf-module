@@ -147,7 +147,7 @@ def test_get_validated_config(test_config, error, mocker):
     s3_stubber.add_response(
         "get_object",
         {"Body": StreamingBody(io.BytesIO(test_config), len(test_config))},
-        {"Bucket": "CONFIG_S3_BUCKET", "Key": "CONFIG_S3_KEY"},
+        {"Bucket": "CONFIG_S3_BUCKET", "Key": "CONFIG_S3_KEY", "ExpectedBucketOwner":"CONFIG_S3_ACCOUNT_ID"},
     )
     s3_stubber.activate()
     mocker.patch(
