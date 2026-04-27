@@ -103,7 +103,7 @@ variable "s3_bucket_arn" {
 }
 
 variable "s3_bucket_account_id" {
-  type = string
+  type        = string
   description = "Account ID of the bucket being used for config and failed logs."
 }
 

@@ -120,7 +120,7 @@ resource "aws_cloudwatch_metric_alarm" "cloudwatch_alarm_firehose_splunk_process
 
 # CloudWatch Alarm for IncomingBytes 
 resource "aws_cloudwatch_metric_alarm" "cloudwatch_alarm_firehose_incoming_bytes" {
-  for_each = local.multiplier_rate
+  for_each                  = local.multiplier_rate
   alarm_name                = "${var.environment_prefix_variable}-firehose-incoming-bytes-${each.key}"
   alarm_description         = "${local.alarm_description_text} ${each.key} of the BytesPerSecondLimit"
   comparison_operator       = "GreaterThanThreshold"
@@ -128,7 +128,7 @@ resource "aws_cloudwatch_metric_alarm" "cloudwatch_alarm_firehose_incoming_bytes
   datapoints_to_alarm       = 3
   threshold                 = each.value
   tags                      = var.tags
-  treat_missing_data        = "ignore" 
+  treat_missing_data        = "ignore"
   actions_enabled           = true
   insufficient_data_actions = []
   alarm_actions             = [aws_sns_topic.sns_topic_alerts.arn]
@@ -174,7 +174,7 @@ resource "aws_cloudwatch_metric_alarm" "cloudwatch_alarm_firehose_incoming_bytes
 
 # CloudWatch Alarm for IncomingPutRequests 
 resource "aws_cloudwatch_metric_alarm" "cloudwatch_alarm_firehose_incoming_put_requests" {
-  for_each = local.multiplier_rate
+  for_each                  = local.multiplier_rate
   alarm_name                = "${var.environment_prefix_variable}-firehose-incoming-put-requests-${each.key}"
   alarm_description         = "${local.alarm_description_text} ${each.key} of the PutRequestsPerSecondLimit"
   comparison_operator       = "GreaterThanThreshold"
@@ -182,7 +182,7 @@ resource "aws_cloudwatch_metric_alarm" "cloudwatch_alarm_firehose_incoming_put_r
   datapoints_to_alarm       = 3
   threshold                 = each.value
   tags                      = var.tags
-  treat_missing_data        = "ignore" 
+  treat_missing_data        = "ignore"
   actions_enabled           = true
   insufficient_data_actions = []
   alarm_actions             = [aws_sns_topic.sns_topic_alerts.arn]
@@ -229,7 +229,7 @@ resource "aws_cloudwatch_metric_alarm" "cloudwatch_alarm_firehose_incoming_put_r
 
 # CloudWatch Alarm for IncomingRecords 
 resource "aws_cloudwatch_metric_alarm" "cloudwatch_alarm_firehose_incoming_records" {
-  for_each = local.multiplier_rate
+  for_each                  = local.multiplier_rate
   alarm_name                = "${var.environment_prefix_variable}-firehose-incoming-records-${each.key}"
   alarm_description         = "${local.alarm_description_text} ${each.key} of the RecordsPerSecondLimit"
   comparison_operator       = "GreaterThanThreshold"
@@ -237,7 +237,7 @@ resource "aws_cloudwatch_metric_alarm" "cloudwatch_alarm_firehose_incoming_recor
   datapoints_to_alarm       = 3
   threshold                 = each.value
   tags                      = var.tags
-  treat_missing_data        = "ignore" 
+  treat_missing_data        = "ignore"
   actions_enabled           = true
   insufficient_data_actions = []
   alarm_actions             = [aws_sns_topic.sns_topic_alerts.arn]
@@ -284,7 +284,7 @@ resource "aws_cloudwatch_metric_alarm" "cloudwatch_alarm_firehose_incoming_recor
 
 # CloudWatch Alarm for no IncomingRecords to Firehose 
 resource "aws_cloudwatch_metric_alarm" "cloudwatch_alarm_firehose_no_incoming_records" {
-  count                     = var.create_firehose_no_incoming_records_alarm ? 1 : 0  
+  count                     = var.create_firehose_no_incoming_records_alarm ? 1 : 0
   alarm_name                = "${var.environment_prefix_variable}-firehose-no-incoming-records"
   alarm_description         = "Alarm if the ${local.firehose_stream_name} Firehose to Splunk stops receiving records"
   metric_name               = "IncomingRecords"
