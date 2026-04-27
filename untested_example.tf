@@ -10,6 +10,7 @@ locals {
   bucket_name                 = "EXAMPLE_BUCKET_NAME"
   bucket_arn                  = "EXAMPLE_BUCKET_ARN"
   bucket_kms_arn              = "EXAMPLE_BUCKET_KEY_ARN"
+  bucket_account              = "EXAMPLE_BUCKET_ACCOUNT_ID"
 }
 
 # S3 module
@@ -44,6 +45,7 @@ module "firehose" {
   account_id                  = local.account_id
   s3_config_file_key          = aws_s3_object.config_upload.key
   s3_kms_key_arn              = local.bucket_kms_arn
+  s3_bucket_account_id        = local.bucket_account
 }
 
 # Subscription module
