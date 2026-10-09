@@ -104,7 +104,9 @@ variable "s3_bucket_arn" {
 
 variable "s3_bucket_account_id" {
   type        = string
-  description = "Account ID of the bucket being used for config and failed logs."
+  description = "Account ID of the bucket being used for config and failed logs. If unset will default to var.account_id"
+  nullable    = true
+  default     = "true"
 }
 
 variable "s3_retries_prefix" {

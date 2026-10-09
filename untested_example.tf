@@ -10,7 +10,7 @@ locals {
   bucket_name                 = "EXAMPLE_BUCKET_NAME"
   bucket_arn                  = "EXAMPLE_BUCKET_ARN"
   bucket_kms_arn              = "EXAMPLE_BUCKET_KEY_ARN"
-  bucket_account              = "EXAMPLE_BUCKET_ACCOUNT_ID"
+  bucket_account              = data.aws_caller_identity.current.account_id
 }
 
 # S3 module

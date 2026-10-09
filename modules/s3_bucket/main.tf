@@ -54,19 +54,19 @@ data "aws_iam_policy_document" "failed_bucket_policy" {
       values   = var.approved_s3_resources
     }
   }
-  # Allow org accounts to write to their own promon prefix
+
+  # Allow org accounts to PutObject to their own promon prefix (with ACL enforcement)
   dynamic "statement" {
     for_each = var.organization_id != null ? [1] : []
     content {
-      sid    = "AllowOrgAccountsWriteToOwnPromonPrefix"
+      sid    = "AllowOrgAccountsPutToOwnPromonPrefix"
       effect = "Allow"
       principals {
         type        = "*"
         identifiers = ["*"]
       }
       actions = [
-        "s3:PutObject",
-        "s3:AbortMultipartUpload"
+        "s3:PutObject"
       ]
       resources = [
         "arn:aws:s3:::${var.bucket_name}/${var.promon_prefix}/$${aws:PrincipalAccount}/*"
@@ -80,6 +80,30 @@ data "aws_iam_policy_document" "failed_bucket_policy" {
         test     = "StringEquals"
         variable = "s3:x-amz-acl"
         values   = ["bucket-owner-full-control"]
+      }
+    }
+  }
+
+  # Allow org accounts to manage multipart uploads to their own promon prefix
+  dynamic "statement" {
+    for_each = var.organization_id != null ? [1] : []
+    content {
+      sid    = "AllowOrgAccountsMultipartToOwnPromonPrefix"
+      effect = "Allow"
+      principals {
+        type        = "*"
+        identifiers = ["*"]
+      }
+      actions = [
+        "s3:AbortMultipartUpload"
+      ]
+      resources = [
+        "arn:aws:s3:::${var.bucket_name}/${var.promon_prefix}/$${aws:PrincipalAccount}/*"
+      ]
+      condition {
+        test     = "StringEquals"
+        variable = "aws:PrincipalOrgID"
+        values   = [var.organization_id]
       }
     }
   }
