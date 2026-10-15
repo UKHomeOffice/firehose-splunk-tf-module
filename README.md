@@ -1,11 +1,11 @@
 # Firehose to Splunk terraform
  
 ## What is this?
-This repository contains a main module (and 2 little helper modules) that provide a tested blueprint for sending logs from AWS to firehose. You can send logs to this firehose from different AWS CloudWatch log groups, the firehose then uses a small lambda (python) that takes a config that lets you: 
+This repository contains a main module (and 2 little helper modules) that provide a tested blueprint for sending logs from AWS to Splunk. You can send logs to this firehose from different AWS CloudWatch log groups or from AWS eventbridge. The firehose then uses a small lambda (python) that takes a config that lets you: 
 1.	Redact or drop logs based on regex
 2.	Apply indexes and sourcetypes based on source or regex
 
-There are also 2 retry lambdas to cover the 2 failure senarios when using Firehose (See the Architecture section for more info)
+There are also 2 retry lambdas to cover the 2 failure scenarios when using Firehose (See the Architecture section for more info)
 
 ## Why did we make it?
 Past patterns we used for cloud native security log pipelines have required config/complexity elsewhere and using lots of different firehose instances to send logs without transformation (something we wanted to do) 
